@@ -22,10 +22,23 @@ ninja qemu  # Test in QEMU
 
 ### Using Conan + CMake
 ```bash
+# First time: install Conan and setup profile
+pip3 install conan
+conan profile detect --force
+
+# Install dependencies (generates toolchain files - Release by default)
+conan install . --build=missing
+
+# Configure with Conan toolchain
 mkdir build && cd build
-conan install .. --build=missing
-cmake .. -DCMAKE_TOOLCHAIN_FILE=conan_toolchain.cmake
+cmake .. -DCMAKE_TOOLCHAIN_FILE=../build/Release/generators/conan_toolchain.cmake
+
+# Build
 cmake --build .
+
+# Note: The toolchain path matches the build type:
+# - Release (default): build/Release/generators/conan_toolchain.cmake
+# - Debug: build/Debug/generators/conan_toolchain.cmake (use -s build_type=Debug)
 ```
 
 ## Build System Comparison
@@ -160,18 +173,23 @@ conan profile detect --force
 
 #### Build Commands
 ```bash
-# Create build directory
+# Install dependencies (generates toolchain in build/<BuildType>/generators/)
+# Default is Release build type
+conan install . --build=missing
+
+# Alternative: Install with specific build type
+conan install . --build=missing -s build_type=Debug    # Generates in build/Debug/generators/
+conan install . --build=missing -s build_type=Release  # Generates in build/Release/generators/
+
+# Create build directory and configure with Conan-generated toolchain
+# Note: Toolchain path must match the build type used in conan install
 mkdir build && cd build
 
-# Install dependencies (currently none, but ready for future)
-conan install .. --build=missing
+# For Release build (default)
+cmake .. -DCMAKE_TOOLCHAIN_FILE=../build/Release/generators/conan_toolchain.cmake
 
-# Alternative: Install with specific settings
-conan install .. --build=missing -s build_type=Debug
-conan install .. --build=missing -s build_type=Release
-
-# Configure with Conan-generated toolchain
-cmake .. -DCMAKE_TOOLCHAIN_FILE=conan_toolchain.cmake
+# Or for Debug build
+cmake .. -DCMAKE_TOOLCHAIN_FILE=../build/Debug/generators/conan_toolchain.cmake
 
 # Build
 cmake --build .
@@ -187,12 +205,18 @@ conan build . --build-folder=build
 - ✅ Version management
 - ✅ Cross-platform package management
 - ✅ Integration with CMake and other build systems
+- ✅ **Recommended for CI/CD** - ensures consistent builds
 
 #### Disadvantages
 - ❌ Requires Python and Conan
-- ❌ Additional complexity
-- ❌ Currently overkill (we have no dependencies yet)
+- ❌ Additional setup step
 - ❌ Learning curve
+
+#### When to Use
+- ✅ **CI/CD pipelines** (all workflows now use Conan)
+- ✅ **Production builds** requiring reproducibility
+- ✅ **When adding external dependencies** (QT6, Mesa RADV in the future)
+- ✅ **Cross-platform development** needing consistent dependencies
 
 ---
 
@@ -214,26 +238,31 @@ cd build-ninja && ninja && ninja qemu
 - Configure your IDE to use the CMakeLists.txt
 
 ### For CI/CD
-**Use: Make or CMake**
+**Use: Conan + CMake (Recommended)**
 ```bash
 # GitHub Actions, GitLab CI, etc.
-make all && make test
-
-# Or with CMake
-cmake -B build -G Ninja
+# All MetalOS CI workflows now use Conan
+conan install . --build=missing
+cmake -B build -DCMAKE_TOOLCHAIN_FILE=build/Release/generators/conan_toolchain.cmake
 cmake --build build
 ctest --test-dir build
 ```
 
+Benefits:
+- ✅ Reproducible builds across different CI runners
+- ✅ Consistent dependency versions
+- ✅ Future-proof for when we add dependencies
+
 ### For Cross-Platform Development
-**Use: CMake + Ninja**
+**Use: Conan + CMake + Ninja**
 ```bash
 # Works on Linux, macOS, Windows
-cmake -G Ninja -B build
+conan install . --build=missing
+cmake -G Ninja -B build -DCMAKE_TOOLCHAIN_FILE=build/Release/generators/conan_toolchain.cmake
 cmake --build build
 ```
 
-### For Projects with Dependencies (Future)
+### For Projects with Dependencies (Current & Future)
 **Use: Conan + CMake**
 ```bash
 # When we add QT6, Mesa RADV, etc.

@@ -31,13 +31,25 @@ jobs:
           ovmf \
           mtools \
           xorriso \
-          imagemagick
+          imagemagick \
+          python3 \
+          python3-pip
+        
+        # Install Conan
+        pip3 install conan
+        
+        # Configure Conan
+        conan profile detect --force
+    
+    - name: Install Conan dependencies
+      run: |
+        conan install . --build=missing
     
     - name: Configure CMake
       run: |
         mkdir -p build
         cd build
-        cmake ..
+        cmake .. -DCMAKE_TOOLCHAIN_FILE=../build/Release/generators/conan_toolchain.cmake
     
     - name: Build bootloader and kernel
       run: |

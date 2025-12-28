@@ -90,10 +90,21 @@ ninja qemu
 ### Conan (With Package Management)
 
 ```bash
+# First time: install Conan and setup profile
+pip3 install conan
+conan profile detect --force
+
+# Install dependencies and generate toolchain (Release build by default)
+conan install . --build=missing
+
+# Configure and build
 mkdir build && cd build
-conan install .. --build=missing
 cmake .. -DCMAKE_TOOLCHAIN_FILE=../build/Release/generators/conan_toolchain.cmake -G Ninja
 ninja
+
+# Note: For Debug build, use:
+# conan install . --build=missing -s build_type=Debug
+# cmake .. -DCMAKE_TOOLCHAIN_FILE=../build/Debug/generators/conan_toolchain.cmake -G Ninja
 ```
 
 ### Docker Build (Recommended for Consistency)
