@@ -74,6 +74,11 @@ void* PhysicalMemoryManager::allocPage() {
         uint64_t byte = i / 8;
         uint64_t bit = i % 8;
         
+        // Bounds check to prevent buffer overflow
+        if (byte >= BITMAP_SIZE) {
+            break;
+        }
+        
         if (!(pageBitmap[byte] & (1 << bit))) {
             // Mark as used
             pageBitmap[byte] |= (1 << bit);
@@ -110,6 +115,11 @@ void PhysicalMemoryManager::freePage(void* page) {
     
     uint64_t byte = pageIdx / 8;
     uint64_t bit = pageIdx % 8;
+    
+    // Bounds check to prevent buffer overflow
+    if (byte >= BITMAP_SIZE) {
+        return;
+    }
     
     // Mark as free
     pageBitmap[byte] &= ~(1 << bit);
