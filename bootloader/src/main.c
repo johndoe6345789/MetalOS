@@ -10,6 +10,7 @@
  * That's it. No fancy stuff.
  */
 
+#include <stddef.h>
 #include "bootloader.h"
 #include "efi.h"
 
@@ -53,6 +54,7 @@ static EFI_SYSTEM_TABLE* gST = NULL;
  * Print a string to the UEFI console
  */
 void print_string(const CHAR16* str) {
+    (void)str;
     if (gST && gST->ConOut) {
         // In real implementation: gST->ConOut->OutputString(gST->ConOut, (CHAR16*)str);
         // For now, this is a stub
@@ -113,6 +115,7 @@ void* get_rsdp(void) {
 EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable) {
     EFI_STATUS status;
     BootInfo boot_info = {0};
+    (void)boot_info;
     
     gST = SystemTable;
     
