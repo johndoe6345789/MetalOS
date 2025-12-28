@@ -21,16 +21,8 @@ setup_firmware() {
     echo "=== Setting up AMD GPU Firmware Blobs ==="
     
     FIRMWARE_DIR="$DEPS_DIR/firmware"
-    TEMP_DIR=$(mktemp -d)
     
-    cd "$TEMP_DIR"
-    
-    # Clone linux-firmware repository (shallow clone for speed)
-    echo "Downloading linux-firmware repository..."
-    git clone --depth 1 https://git.kernel.org/pub/scm/linux/kernel/git/firmware/linux-firmware.git
-    
-    # Copy required Navi 23 (dimgrey_cavefish) firmware files
-    echo "Copying Navi 23 firmware files..."
+    # Check if firmware files already exist
     FIRMWARE_FILES=(
         "dimgrey_cavefish_ce.bin"
         "dimgrey_cavefish_me.bin"
@@ -41,22 +33,47 @@ setup_firmware() {
         "dimgrey_cavefish_vcn.bin"
     )
     
+    ALL_EXIST=true
     for file in "${FIRMWARE_FILES[@]}"; do
-        if [ -f "linux-firmware/amdgpu/$file" ]; then
-            cp "linux-firmware/amdgpu/$file" "$FIRMWARE_DIR/"
-            echo "  ✓ Copied $file"
-        else
-            echo "  ⚠ Warning: $file not found"
+        if [ ! -f "$FIRMWARE_DIR/$file" ]; then
+            ALL_EXIST=false
+            break
         fi
     done
     
-    # Get commit hash for version tracking
-    cd linux-firmware
-    COMMIT_HASH=$(git rev-parse HEAD)
-    COMMIT_DATE=$(git log -1 --format=%cd --date=short)
+    if [ "$ALL_EXIST" = true ]; then
+        echo "✓ Firmware files already present:"
+        for file in "${FIRMWARE_FILES[@]}"; do
+            echo "  ✓ $file"
+        done
+        echo ""
+        return 0
+    fi
     
-    # Create VERSION file
-    cat > "$FIRMWARE_DIR/VERSION" <<EOF
+    # Try to download from linux-firmware repository
+    TEMP_DIR=$(mktemp -d)
+    
+    echo "Attempting to download linux-firmware repository..."
+    if git clone --depth 1 https://git.kernel.org/pub/scm/linux/kernel/git/firmware/linux-firmware.git "$TEMP_DIR/linux-firmware" 2>/dev/null; then
+        cd "$TEMP_DIR/linux-firmware"
+        
+        # Copy required Navi 23 (dimgrey_cavefish) firmware files
+        echo "Copying Navi 23 firmware files..."
+        for file in "${FIRMWARE_FILES[@]}"; do
+            if [ -f "amdgpu/$file" ]; then
+                cp "amdgpu/$file" "$FIRMWARE_DIR/"
+                echo "  ✓ Copied $file"
+            else
+                echo "  ⚠ Warning: $file not found"
+            fi
+        done
+        
+        # Get commit hash for version tracking
+        COMMIT_HASH=$(git rev-parse HEAD)
+        COMMIT_DATE=$(git log -1 --format=%cd --date=short)
+        
+        # Create VERSION file
+        cat > "$FIRMWARE_DIR/VERSION" <<EOF
 Linux Firmware Repository
 Commit: $COMMIT_HASH
 Date: $COMMIT_DATE
@@ -64,18 +81,54 @@ Source: https://git.kernel.org/pub/scm/linux/kernel/git/firmware/linux-firmware.
 
 Files:
 EOF
+        
+        for file in "${FIRMWARE_FILES[@]}"; do
+            if [ -f "$FIRMWARE_DIR/$file" ]; then
+                SHA256=$(sha256sum "$FIRMWARE_DIR/$file" | cut -d' ' -f1)
+                echo "  $file (SHA256: $SHA256)" >> "$FIRMWARE_DIR/VERSION"
+            fi
+        done
+        
+        cd "$METALOS_ROOT"
+        rm -rf "$TEMP_DIR"
+        
+        echo "✓ Firmware blobs setup complete"
+    else
+        echo "⚠ Warning: Unable to download linux-firmware repository"
+        echo "  This may be due to network restrictions or the repository being unavailable."
+        echo ""
+        echo "To manually download firmware files:"
+        echo "  1. Visit: https://git.kernel.org/pub/scm/linux/kernel/git/firmware/linux-firmware.git"
+        echo "  2. Download the following files from the amdgpu/ directory:"
+        for file in "${FIRMWARE_FILES[@]}"; do
+            echo "     - $file"
+        done
+        echo "  3. Copy them to: $FIRMWARE_DIR/"
+        echo ""
+        echo "Alternatively, on a system with linux-firmware installed:"
+        echo "  cp /lib/firmware/amdgpu/dimgrey_cavefish_*.bin $FIRMWARE_DIR/"
+        
+        # Create placeholder STATUS file
+        cat > "$FIRMWARE_DIR/STATUS" <<EOF
+AMD GPU Firmware Status
+
+Status: Pending download
+
+The AMD Radeon RX 6600 (Navi 23) firmware files need to be downloaded.
+These files are required for GPU initialization and operation.
+
+Required files:
+$(for file in "${FIRMWARE_FILES[@]}"; do echo "  - $file"; done)
+
+Download options:
+1. Run this script on a system with internet access
+2. Manually download from linux-firmware repository
+3. Copy from /lib/firmware/amdgpu/ on a Linux system with linux-firmware package
+
+See deps/firmware/README.md for detailed instructions.
+EOF
+    fi
     
-    for file in "${FIRMWARE_FILES[@]}"; do
-        if [ -f "$FIRMWARE_DIR/$file" ]; then
-            SHA256=$(sha256sum "$FIRMWARE_DIR/$file" | cut -d' ' -f1)
-            echo "  $file (SHA256: $SHA256)" >> "$FIRMWARE_DIR/VERSION"
-        fi
-    done
-    
-    cd "$METALOS_ROOT"
-    rm -rf "$TEMP_DIR"
-    
-    echo "✓ Firmware blobs setup complete"
     echo ""
 }
 
@@ -84,6 +137,13 @@ setup_ovmf() {
     echo "=== Setting up OVMF UEFI Firmware ==="
     
     OVMF_DIR="$DEPS_DIR/ovmf"
+    
+    # Check if OVMF already exists
+    if [ -f "$OVMF_DIR/OVMF_CODE.fd" ]; then
+        echo "✓ OVMF firmware already present"
+        echo ""
+        return 0
+    fi
     
     # Check for OVMF in system locations
     if [ -f /usr/share/OVMF/OVMF_CODE.fd ]; then
@@ -136,6 +196,12 @@ setup_mesa_radv() {
     
     MESA_DIR="$DEPS_DIR/mesa-radv"
     
+    if [ -f "$MESA_DIR/STATUS" ]; then
+        echo "ℹ Mesa RADV setup already documented"
+        echo ""
+        return 0
+    fi
+    
     cat > "$MESA_DIR/STATUS" <<EOF
 Mesa RADV Driver Setup
 
@@ -164,6 +230,12 @@ setup_qt6() {
     echo "=== Setting up QT6 Framework ==="
     
     QT6_DIR="$DEPS_DIR/qt6"
+    
+    if [ -f "$QT6_DIR/STATUS" ]; then
+        echo "ℹ QT6 setup already documented"
+        echo ""
+        return 0
+    fi
     
     cat > "$QT6_DIR/STATUS" <<EOF
 QT6 Framework Setup

@@ -84,4 +84,13 @@ ui_*.h
 # Don't ignore example files
 !docs/examples/*.bin
 
+# Dependencies (downloaded/generated files)
+deps/firmware/*.bin
+deps/firmware/STATUS
+deps/firmware/VERSION
+deps/ovmf/*.fd
+deps/ovmf/VERSION
+deps/mesa-radv/STATUS
+deps/qt6/STATUS
+
 _codeql_detected_source_root
