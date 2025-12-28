@@ -85,9 +85,21 @@ make qemu-uefi-test            # Test UEFI firmware setup
 
 See [docs/BUILD.md](docs/BUILD.md) for detailed build instructions and [docs/TESTING.md](docs/TESTING.md) for testing guide.
 
+## Dependencies
+
+MetalOS manages third-party dependencies in-house for reproducibility and offline development:
+
+- **GPU Firmware** - AMD Navi 23 firmware blobs (dimgrey_cavefish_*.bin)
+- **Mesa RADV** - Vulkan driver for AMD GPUs
+- **QT6** - Application framework (minimal static build)
+- **OVMF** - UEFI firmware for QEMU testing
+
+See [deps/README.md](deps/README.md) for detailed dependency management instructions.
+
 ## Documentation
 
 - [ARCHITECTURE.md](docs/ARCHITECTURE.md) - System architecture and design
+- [GPU_IMPLEMENTATION.md](docs/GPU_IMPLEMENTATION.md) - GPU driver strategy and implementation
 - [MINIMALISM.md](docs/MINIMALISM.md) - Extreme minimalism philosophy
 - [ROADMAP.md](docs/ROADMAP.md) - Development phases and milestones
 - [BUILD.md](docs/BUILD.md) - Build system and toolchain
