@@ -81,8 +81,10 @@ cd qt-everywhere-src-6.5.3
 
 # Configure for MetalOS (minimal, static linking)
 ./configure -static -no-dbus -no-ssl -no-cups -no-fontconfig \
-            -prefix /home/runner/work/MetalOS/MetalOS/deps/qt6
+            -prefix ../MetalOS/deps/qt6
 ```
+
+**Note**: Adjust the `-prefix` path to match your MetalOS repository location. Using a relative path from the extracted QT source directory.
 
 **License**: LGPL v3 / GPL v2 / Commercial (see QT documentation)
 

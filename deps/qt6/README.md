@@ -28,7 +28,7 @@ cd qt-everywhere-src-6.5.3
 ./configure -static -release \
     -no-dbus -no-ssl -no-cups -no-fontconfig \
     -no-feature-network -no-feature-sql \
-    -prefix $(pwd)/../deps/qt6 \
+    -prefix $PWD/../deps/qt6 \
     -opensource -confirm-license
 
 # Build (this will take a while)

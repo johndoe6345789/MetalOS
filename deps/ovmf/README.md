@@ -29,14 +29,21 @@ cp /usr/share/OVMF/OVMF_CODE.fd deps/ovmf/
 cp /usr/share/OVMF/OVMF_VARS.fd deps/ovmf/
 ```
 
-### Option 2: Download from Gerd Hoffmann's Jenkins
+### Option 2: Download Pre-built Binaries
+
+Pre-built OVMF binaries are available from various sources. One option is Gerd Hoffmann's builds:
 
 ```bash
+# Check https://www.kraxel.org/repos/jenkins/edk2/ for available builds
+# Example with a specific build (check for newer versions):
 wget https://www.kraxel.org/repos/jenkins/edk2/edk2.git-ovmf-x64-0-20230524.209.gf0064ac3af.EOL.no.nore.updates.noarch.rpm
+
 rpm2cpio edk2.git-ovmf-*.rpm | cpio -idmv
 cp usr/share/edk2/ovmf/OVMF_CODE.fd deps/ovmf/
 cp usr/share/edk2/ovmf/OVMF_VARS.fd deps/ovmf/
 ```
+
+**Note**: The specific build URL may change. Visit https://www.kraxel.org/repos/jenkins/edk2/ for current builds or use system packages (Option 1) instead.
 
 ### Option 3: Build from Source
 
