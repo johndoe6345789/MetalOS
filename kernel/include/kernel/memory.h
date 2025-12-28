@@ -39,8 +39,9 @@ public:
     
     /**
      * @brief Initialize the physical memory manager with boot information
-     * @param bootInfo Boot information from bootloader (currently unused, assumes up to 64GB)
-     * @note Currently hardcoded to manage up to 64GB starting at 16MB physical address
+     * @param bootInfo Boot information from bootloader containing UEFI memory map
+     * @note Parses the UEFI memory map to detect actual available RAM (up to 64GB)
+     * @note Falls back to 128MB if memory map is unavailable
      */
     void init(BootInfo* bootInfo);
     

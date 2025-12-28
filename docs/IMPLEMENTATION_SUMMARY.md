@@ -32,10 +32,10 @@
 - Files: `kernel/src/memory.c`, `kernel/include/kernel/memory.h`
 - Functionality: Physical memory and kernel heap management
 - Features:
-  - Bitmap-based physical page allocator
+  - Bitmap-based physical page allocator with UEFI memory map parsing
   - Bump allocator for kernel heap (1MB)
   - Memory utilities (memset, memcpy, memcmp)
-  - Support for up to 64GB RAM
+  - Support for up to 64GB RAM (automatically detects available memory)
 
 #### PCI Bus Support
 - Files: `kernel/src/pci.c`, `kernel/include/kernel/pci.h`
