@@ -63,9 +63,11 @@ add_executable(kernel_elf $<TARGET_OBJECTS:kernel_obj> ${KERNEL_ASM_OBJECTS})
 set_target_properties(kernel_elf PROPERTIES
     OUTPUT_NAME metalos.elf
     LINKER_LANGUAGE C
+    POSITION_INDEPENDENT_CODE OFF
 )
 target_link_options(kernel_elf PRIVATE
     -nostdlib
+    -no-pie
     -T ${CMAKE_CURRENT_SOURCE_DIR}/linker.ld
 )
 
