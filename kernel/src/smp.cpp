@@ -1,4 +1,3 @@
-// THIS IS C++ NOW
 /*
  * MetalOS Kernel - SMP (Symmetric Multi-Processing) Support
  * 
@@ -10,11 +9,6 @@
 #include "kernel/apic.h"
 #include "kernel/memory.h"
 
-// CPU information array
-static cpu_info_t cpu_info[MAX_CPUS];
-static uint8_t cpu_count = 1;  // Start with BSP
-static bool smp_enabled = false;
-
 // Bootstrap CPU is always CPU 0
 #define BSP_CPU_ID 0
 
@@ -22,90 +16,95 @@ static bool smp_enabled = false;
 #define AP_TRAMPOLINE_ADDR 0x8000
 
 // AP startup code (will be copied to low memory)
-extern void ap_trampoline_start(void);
-extern void ap_trampoline_end(void);
+extern "C" {
+    void ap_trampoline_start(void);
+    void ap_trampoline_end(void);
+}
 
-// Get current CPU ID from APIC
-uint8_t smp_get_current_cpu(void) {
-    if (!smp_enabled) {
+// SMPManager class implementation
+SMPManager::SMPManager() : cpuCount(1), smpEnabled(false) {
+    // Initialize BSP
+    cpuInfo[0].cpu_id = BSP_CPU_ID;
+    cpuInfo[0].apic_id = 0;
+    cpuInfo[0].online = false;
+    cpuInfo[0].kernel_stack = 0;
+}
+
+uint8_t SMPManager::getCurrentCPU() const {
+    if (!smpEnabled) {
         return BSP_CPU_ID;
     }
     
-    uint8_t apic_id = apic_get_id();
+    uint8_t apicId = apic_get_id();
     
     // Find CPU by APIC ID
-    for (uint8_t i = 0; i < cpu_count; i++) {
-        if (cpu_info[i].apic_id == apic_id) {
-            return cpu_info[i].cpu_id;
+    for (uint8_t i = 0; i < cpuCount; i++) {
+        if (cpuInfo[i].apic_id == apicId) {
+            return cpuInfo[i].cpu_id;
         }
     }
     
     return BSP_CPU_ID;
 }
 
-// Initialize a CPU entry
-static void smp_init_cpu(uint8_t cpu_id, uint8_t apic_id) {
-    if (cpu_id >= MAX_CPUS) return;
+void SMPManager::initCPU(uint8_t cpuId, uint8_t apicId) {
+    if (cpuId >= MAX_CPUS) return;
     
-    cpu_info[cpu_id].cpu_id = cpu_id;
-    cpu_info[cpu_id].apic_id = apic_id;
-    cpu_info[cpu_id].online = false;
-    cpu_info[cpu_id].kernel_stack = 0;
+    cpuInfo[cpuId].cpu_id = cpuId;
+    cpuInfo[cpuId].apic_id = apicId;
+    cpuInfo[cpuId].online = false;
+    cpuInfo[cpuId].kernel_stack = 0;
 }
 
-// Mark CPU as online
-void smp_cpu_online(uint8_t cpu_id) {
-    if (cpu_id < MAX_CPUS) {
-        cpu_info[cpu_id].online = true;
+void SMPManager::markCPUOnline(uint8_t cpuId) {
+    if (cpuId < MAX_CPUS) {
+        cpuInfo[cpuId].online = true;
     }
 }
 
-// Simple delay for AP startup
-static void smp_delay(uint32_t microseconds) {
+void SMPManager::delay(uint32_t microseconds) {
     // Approximate delay (not precise)
     for (volatile uint32_t i = 0; i < microseconds * 100; i++) {
         __asm__ volatile("pause");
     }
 }
 
-// Start an Application Processor
-static bool smp_start_ap(uint8_t apic_id) {
+bool SMPManager::startAP(uint8_t apicId) {
     // Send INIT IPI
-    apic_send_ipi(apic_id, 0, APIC_IPI_INIT);
-    smp_delay(10000);  // 10ms
+    apic_send_ipi(apicId, 0, APIC_IPI_INIT);
+    delay(10000);  // 10ms
     
     // Send SIPI (Startup IPI) with trampoline address
     uint8_t vector = AP_TRAMPOLINE_ADDR >> 12;  // Page number
-    apic_send_ipi(apic_id, vector, APIC_IPI_STARTUP);
-    smp_delay(200);  // 200us
+    apic_send_ipi(apicId, vector, APIC_IPI_STARTUP);
+    delay(200);  // 200us
     
     // Send second SIPI (as per Intel spec)
-    apic_send_ipi(apic_id, vector, APIC_IPI_STARTUP);
-    smp_delay(200);  // 200us
+    apic_send_ipi(apicId, vector, APIC_IPI_STARTUP);
+    delay(200);  // 200us
     
     // Wait for AP to come online (timeout after 1 second)
     for (int i = 0; i < 100; i++) {
         // Check if AP marked itself online
-        for (uint8_t cpu_id = 0; cpu_id < cpu_count; cpu_id++) {
-            if (cpu_info[cpu_id].apic_id == apic_id && cpu_info[cpu_id].online) {
+        for (uint8_t cpuId = 0; cpuId < cpuCount; cpuId++) {
+            if (cpuInfo[cpuId].apic_id == apicId && cpuInfo[cpuId].online) {
                 return true;
             }
         }
-        smp_delay(10000);  // 10ms
+        delay(10000);  // 10ms
     }
     
     return false;
 }
 
-// Initialize SMP
-void smp_init(void) {
+void SMPManager::init() {
     // Check if APIC is available
     if (!apic_is_available()) {
         // Single core mode
-        smp_init_cpu(BSP_CPU_ID, 0);
-        cpu_info[BSP_CPU_ID].online = true;
-        cpu_count = 1;
-        smp_enabled = false;
+        initCPU(BSP_CPU_ID, 0);
+        cpuInfo[BSP_CPU_ID].online = true;
+        cpuCount = 1;
+        smpEnabled = false;
         return;
     }
     
@@ -113,48 +112,74 @@ void smp_init(void) {
     apic_init();
     
     // Get BSP APIC ID
-    uint8_t bsp_apic_id = apic_get_id();
-    smp_init_cpu(BSP_CPU_ID, bsp_apic_id);
-    cpu_info[BSP_CPU_ID].online = true;
+    uint8_t bspApicId = apic_get_id();
+    initCPU(BSP_CPU_ID, bspApicId);
+    cpuInfo[BSP_CPU_ID].online = true;
     
     // Detect additional CPUs from APIC
-    // For simplicity, we'll try to start CPUs with sequential APIC IDs
-    // A real implementation would parse ACPI MADT table
+    uint8_t maxCPUsToTry = 12;  // Try up to 12 logical processors
     
-    uint8_t max_cpus_to_try = 12;  // Try up to 12 logical processors
-    
-    for (uint8_t apic_id = 0; apic_id < max_cpus_to_try && cpu_count < MAX_CPUS; apic_id++) {
+    for (uint8_t apicId = 0; apicId < maxCPUsToTry && cpuCount < MAX_CPUS; apicId++) {
         // Skip BSP
-        if (apic_id == bsp_apic_id) {
+        if (apicId == bspApicId) {
             continue;
         }
         
         // Initialize CPU entry
-        smp_init_cpu(cpu_count, apic_id);
+        initCPU(cpuCount, apicId);
         
         // Try to start this AP
-        if (smp_start_ap(apic_id)) {
-            cpu_count++;
+        if (startAP(apicId)) {
+            cpuCount++;
         }
     }
     
-    smp_enabled = (cpu_count > 1);
+    smpEnabled = (cpuCount > 1);
 }
 
-// Get number of CPUs
-uint8_t smp_get_cpu_count(void) {
-    return cpu_count;
+uint8_t SMPManager::getCPUCount() const {
+    return cpuCount;
 }
 
-// Check if SMP is enabled
-bool smp_is_enabled(void) {
-    return smp_enabled;
+bool SMPManager::isEnabled() const {
+    return smpEnabled;
 }
 
-// Get CPU info
-cpu_info_t* smp_get_cpu_info(uint8_t cpu_id) {
-    if (cpu_id >= MAX_CPUS) {
-        return NULL;
+cpu_info_t* SMPManager::getCPUInfo(uint8_t cpuId) {
+    if (cpuId >= MAX_CPUS) {
+        return nullptr;
     }
-    return &cpu_info[cpu_id];
+    return &cpuInfo[cpuId];
 }
+
+// Global SMP manager instance
+static SMPManager globalSMP;
+
+// C-compatible wrapper functions
+extern "C" {
+
+void smp_init(void) {
+    globalSMP.init();
+}
+
+uint8_t smp_get_cpu_count(void) {
+    return globalSMP.getCPUCount();
+}
+
+uint8_t smp_get_current_cpu(void) {
+    return globalSMP.getCurrentCPU();
+}
+
+bool smp_is_enabled(void) {
+    return globalSMP.isEnabled();
+}
+
+cpu_info_t* smp_get_cpu_info(uint8_t cpu_id) {
+    return globalSMP.getCPUInfo(cpu_id);
+}
+
+void smp_cpu_online(uint8_t cpu_id) {
+    globalSMP.markCPUOnline(cpu_id);
+}
+
+} // extern "C"
