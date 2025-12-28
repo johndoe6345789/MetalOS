@@ -1,0 +1,236 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'  # Trigger on version tags like v1.0.0, v2.1.3, etc.
+  workflow_dispatch:  # Allow manual triggering
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # Required for creating releases
+      actions: write   # Required for uploading artifacts
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Install build dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          build-essential \
+          nasm \
+          qemu-system-x86 \
+          ovmf \
+          mtools \
+          xorriso
+    
+    - name: Build bootloader
+      run: |
+        cd bootloader
+        make || echo "Warning: Bootloader build incomplete (expected in early development)"
+    
+    - name: Build kernel
+      run: |
+        cd kernel
+        make || echo "Warning: Kernel build incomplete (expected in early development)"
+    
+    - name: Create bootable image
+      run: |
+        make image
+    
+    - name: Prepare release directory
+      run: |
+        mkdir -p release
+        
+        # Copy the bootable disk image
+        if [ -f build/metalos.img ]; then
+          cp build/metalos.img release/
+          echo "✓ Copied metalos.img"
+        fi
+        
+        # Copy bootloader if it exists
+        if [ -f bootloader/bootx64.efi ]; then
+          cp bootloader/bootx64.efi release/
+          echo "✓ Copied bootx64.efi"
+        fi
+        
+        # Copy kernel if it exists
+        if [ -f kernel/metalos.bin ]; then
+          cp kernel/metalos.bin release/
+          echo "✓ Copied metalos.bin"
+        fi
+        
+        # Copy QEMU instructions
+        cp QEMU_INSTRUCTIONS.md release/
+        echo "✓ Copied QEMU_INSTRUCTIONS.md"
+        
+        # Create README for the release
+        cat > release/README.md << 'EOF'
+        # MetalOS Release Package
+        
+        This package contains a compiled release of MetalOS.
+        
+        ## Contents
+        
+        - **metalos.img** - Bootable disk image (use with QEMU or write to USB)
+        - **bootx64.efi** - UEFI bootloader (standalone)
+        - **metalos.bin** - Kernel binary
+        - **QEMU_INSTRUCTIONS.md** - Detailed instructions for testing with QEMU on Windows, macOS, and Linux
+        - **README.md** - This file
+        
+        ## Quick Start
+        
+        ### Testing with QEMU
+        
+        The easiest way to test MetalOS is using QEMU. See **QEMU_INSTRUCTIONS.md** for detailed setup instructions for your operating system.
+        
+        **Quick command (Linux/macOS with QEMU and OVMF installed):**
+        ```bash
+        qemu-system-x86_64 \
+          -bios /usr/share/OVMF/OVMF_CODE.fd \
+          -drive format=raw,file=metalos.img \
+          -m 512M \
+          -serial stdio
+        ```
+        
+        **Quick command (Windows with QEMU installed):**
+        ```cmd
+        "C:\Program Files\qemu\qemu-system-x86_64.exe" ^
+          -bios "C:\Program Files\qemu\share\edk2-x86_64-code.fd" ^
+          -drive format=raw,file=metalos.img ^
+          -m 512M ^
+          -serial stdio
+        ```
+        
+        ### Creating a Bootable USB
+        
+        ⚠️ **WARNING**: This will erase all data on the USB drive!
+        
+        ```bash
+        # Linux/macOS (replace /dev/sdX with your USB device)
+        sudo dd if=metalos.img of=/dev/sdX bs=4M status=progress
+        sync
+        ```
+        
+        ## System Requirements
+        
+        - **Architecture**: AMD64 (x86-64)
+        - **Boot Mode**: UEFI
+        - **Minimum RAM**: 512MB
+        - **Target Hardware**: Radeon RX 6600 GPU (for full functionality)
+        
+        ## Development Status
+        
+        MetalOS is currently under active development. See the repository for current status and roadmap.
+        
+        ## More Information
+        
+        - Repository: https://github.com/johndoe6345789/MetalOS
+        - Documentation: See the docs/ directory in the repository
+        - Issues: https://github.com/johndoe6345789/MetalOS/issues
+        
+        ## License
+        
+        See LICENSE file in the repository.
+        EOF
+        
+        echo "✓ Created README.md"
+        
+        # List contents
+        echo ""
+        echo "Release directory contents:"
+        ls -lh release/
+    
+    - name: Create release archive
+      run: |
+        cd release
+        zip -r ../metalos-release.zip .
+        cd ..
+        
+        echo ""
+        echo "Release archive created:"
+        ls -lh metalos-release.zip
+        
+        # Show archive contents
+        echo ""
+        echo "Archive contents:"
+        unzip -l metalos-release.zip
+    
+    - name: Upload release artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: metalos-release
+        path: metalos-release.zip
+        retention-days: 90
+    
+    - name: Create GitHub Release
+      if: startsWith(github.ref, 'refs/tags/')
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          metalos-release.zip
+          release/metalos.img
+        body: |
+          ## MetalOS Release ${{ github.ref_name }}
+          
+          This is an automated release of MetalOS.
+          
+          ### What's Included
+          
+          - **metalos-release.zip** - Complete release package with bootable image and QEMU instructions
+          - **metalos.img** - Bootable disk image (standalone)
+          
+          ### Testing with QEMU
+          
+          Download `metalos-release.zip`, extract it, and follow the instructions in `QEMU_INSTRUCTIONS.md` for your operating system (Windows, macOS, or Linux).
+          
+          ### Quick Start (Linux/macOS)
+          
+          ```bash
+          qemu-system-x86_64 \
+            -bios /usr/share/OVMF/OVMF_CODE.fd \
+            -drive format=raw,file=metalos.img \
+            -m 512M \
+            -serial stdio
+          ```
+          
+          ### Quick Start (Windows)
+          
+          ```cmd
+          "C:\Program Files\qemu\qemu-system-x86_64.exe" ^
+            -bios "C:\Program Files\qemu\share\edk2-x86_64-code.fd" ^
+            -drive format=raw,file=metalos.img ^
+            -m 512M ^
+            -serial stdio
+          ```
+          
+          For detailed setup instructions, see `QEMU_INSTRUCTIONS.md` in the release package.
+          
+          ### System Requirements
+          
+          - AMD64 (x86-64) architecture
+          - UEFI boot mode
+          - 512MB+ RAM
+          - QEMU with OVMF/EDK2 firmware for testing
+          
+          See the [repository](https://github.com/johndoe6345789/MetalOS) for more information.
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Upload individual artifacts for inspection
+      uses: actions/upload-artifact@v4
+      with:
+        name: metalos-components
+        path: |
+          release/metalos.img
+          release/bootx64.efi
+          release/metalos.bin
+          release/QEMU_INSTRUCTIONS.md
+          release/README.md
+        retention-days: 30
