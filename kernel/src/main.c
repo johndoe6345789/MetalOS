@@ -30,10 +30,14 @@ void kernel_main(BootInfo* boot_info) {
     // Initialize physical memory manager
     pmm_init(boot_info);
     
-    // Initialize kernel heap (allocate 1MB for kernel heap)
-    void* heap_mem = pmm_alloc_page();
-    if (heap_mem) {
-        heap_init(heap_mem, 256 * PAGE_SIZE);  // 1MB heap
+    // Initialize kernel heap (allocate 256 pages = 1MB for kernel heap)
+    void* heap_start_page = pmm_alloc_page();
+    if (heap_start_page) {
+        // Allocate additional pages for heap (256 pages total)
+        for (int i = 1; i < 256; i++) {
+            pmm_alloc_page();  // Allocate contiguous pages
+        }
+        heap_init(heap_start_page, 256 * PAGE_SIZE);  // 1MB heap
     }
     
     // Initialize timer (1000 Hz = 1ms per tick)

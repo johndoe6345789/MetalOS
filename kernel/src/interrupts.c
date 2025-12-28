@@ -8,6 +8,17 @@
 #include "kernel/interrupts.h"
 #include "kernel/timer.h"
 
+// I/O port access functions
+static inline void outb(uint16_t port, uint8_t value) {
+    __asm__ volatile("outb %0, %1" : : "a"(value), "Nd"(port));
+}
+
+// PIC ports
+#define PIC1_COMMAND 0x20
+#define PIC1_DATA    0x21
+#define PIC2_COMMAND 0xA0
+#define PIC2_DATA    0xA1
+
 // IDT entries (256 interrupts in x86_64)
 static idt_entry_t idt[256];
 static idt_ptr_t idt_ptr;
@@ -64,24 +75,24 @@ static void idt_set_gate(uint8_t num, uint64_t handler, uint16_t selector, uint8
 // Remap PIC (Programmable Interrupt Controller)
 static void pic_remap(void) {
     // ICW1: Initialize PIC
-    __asm__ volatile("outb %0, $0x20" : : "a"((uint8_t)0x11));  // Master PIC
-    __asm__ volatile("outb %0, $0xA0" : : "a"((uint8_t)0x11));  // Slave PIC
+    outb(PIC1_COMMAND, 0x11);  // Master PIC
+    outb(PIC2_COMMAND, 0x11);  // Slave PIC
     
     // ICW2: Set interrupt vector offsets
-    __asm__ volatile("outb %0, $0x21" : : "a"((uint8_t)0x20));  // Master offset to 0x20
-    __asm__ volatile("outb %0, $0xA1" : : "a"((uint8_t)0x28));  // Slave offset to 0x28
+    outb(PIC1_DATA, 0x20);  // Master offset to 0x20
+    outb(PIC2_DATA, 0x28);  // Slave offset to 0x28
     
     // ICW3: Set up cascade
-    __asm__ volatile("outb %0, $0x21" : : "a"((uint8_t)0x04));  // Tell master about slave
-    __asm__ volatile("outb %0, $0xA1" : : "a"((uint8_t)0x02));  // Tell slave its cascade
+    outb(PIC1_DATA, 0x04);  // Tell master about slave
+    outb(PIC2_DATA, 0x02);  // Tell slave its cascade
     
     // ICW4: Set mode
-    __asm__ volatile("outb %0, $0x21" : : "a"((uint8_t)0x01));
-    __asm__ volatile("outb %0, $0xA1" : : "a"((uint8_t)0x01));
+    outb(PIC1_DATA, 0x01);
+    outb(PIC2_DATA, 0x01);
     
     // Mask all interrupts initially
-    __asm__ volatile("outb %0, $0x21" : : "a"((uint8_t)0xFF));
-    __asm__ volatile("outb %0, $0xA1" : : "a"((uint8_t)0xFF));
+    outb(PIC1_DATA, 0xFF);
+    outb(PIC2_DATA, 0xFF);
 }
 
 // Initialize IDT
@@ -156,9 +167,9 @@ void interrupt_handler(registers_t* regs) {
     if (regs->int_no >= 32 && regs->int_no < 48) {
         if (regs->int_no >= 40) {
             // Slave PIC
-            __asm__ volatile("outb %0, $0xA0" : : "a"((uint8_t)0x20));
+            outb(PIC2_COMMAND, 0x20);
         }
         // Master PIC
-        __asm__ volatile("outb %0, $0x20" : : "a"((uint8_t)0x20));
+        outb(PIC1_COMMAND, 0x20);
     }
 }

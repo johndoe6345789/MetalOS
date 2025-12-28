@@ -10,6 +10,7 @@
 // PIT I/O ports
 #define PIT_CHANNEL0 0x40
 #define PIT_COMMAND  0x43
+#define PIC1_DATA    0x21
 
 // PIT constants
 #define PIT_BASE_FREQUENCY 1193182  // Hz
@@ -17,9 +18,15 @@
 // Tick counter
 static volatile uint64_t timer_ticks = 0;
 
-// I/O port access
+// I/O port access functions
 static inline void outb(uint16_t port, uint8_t value) {
     __asm__ volatile("outb %0, %1" : : "a"(value), "Nd"(port));
+}
+
+static inline uint8_t inb(uint16_t port) {
+    uint8_t value;
+    __asm__ volatile("inb %1, %0" : "=a"(value) : "Nd"(port));
+    return value;
 }
 
 // Initialize timer
@@ -36,10 +43,9 @@ void timer_init(uint32_t frequency) {
     
     // Enable timer interrupt (IRQ0)
     // Unmask IRQ0 in PIC
-    uint8_t mask;
-    __asm__ volatile("inb $0x21, %0" : "=a"(mask));
+    uint8_t mask = inb(PIC1_DATA);
     mask &= ~0x01;  // Clear bit 0 (IRQ0)
-    outb(0x21, mask);
+    outb(PIC1_DATA, mask);
 }
 
 // Get current tick count

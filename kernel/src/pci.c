@@ -93,7 +93,10 @@ static void pci_probe_device(uint8_t bus, uint8_t device, uint8_t function) {
 // Initialize PCI subsystem
 void pci_init(void) {
     // Scan all buses, devices, and functions
+    // Note: On real hardware, could optimize by stopping after consecutive empty buses
     for (uint16_t bus = 0; bus < 256; bus++) {
+        uint8_t devices_found = 0;
+        
         for (uint8_t device = 0; device < 32; device++) {
             // Check if device exists (function 0)
             uint32_t vendor_device = pci_read_config(bus, device, 0, 0x00);
@@ -101,6 +104,7 @@ void pci_init(void) {
                 continue;  // Device doesn't exist
             }
             
+            devices_found++;
             pci_probe_device(bus, device, 0);
             
             // Check if multi-function device
@@ -115,6 +119,10 @@ void pci_init(void) {
                 }
             }
         }
+        
+        // Early termination: if no devices found in this bus and we're past bus 0, 
+        // we can potentially stop (though some systems have gaps)
+        // For now, continue full scan for maximum compatibility
     }
 }
 
