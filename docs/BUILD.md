@@ -137,7 +137,7 @@ cmake ..
 cmake --build . --target image
 ```
 
-This creates `build/build/metalos.img` - a bootable disk image containing:
+This creates the bootable disk image at `<build-directory>/build/metalos.img` (e.g., `build/build/metalos.img` if your build directory is named `build/`). The image contains:
 - EFI System Partition with bootloader
 - Kernel binary
 - Any required data files

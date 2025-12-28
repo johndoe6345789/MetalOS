@@ -55,7 +55,7 @@ cmake --build . --target kernel_bin
 cmake --build . --target image
 
 # Create bootable image
-make image
+cmake --build . --target image
 
 # Run in QEMU
 cmake --build . --target qemu          # Headless mode
