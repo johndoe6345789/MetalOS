@@ -83,6 +83,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines. Remember: simplicity over
 - **GPU**: Radeon RX 6600
 - **Input**: PS/2 or USB keyboard/mouse
 - **Boot**: UEFI
+- **QEMU (UEFI MODE)**: For testing the OS.
 
 ## License
 
