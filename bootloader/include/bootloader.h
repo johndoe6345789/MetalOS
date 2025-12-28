@@ -13,8 +13,8 @@
 #define MAX_KERNEL_SIZE     0x1000000 // 16MB max
 
 // Function declarations
-EFI_STATUS initialize_graphics(EFI_HANDLE ImageHandle);
-EFI_STATUS load_kernel(EFI_HANDLE ImageHandle);
+EFI_STATUS initialize_graphics(EFI_HANDLE ImageHandle, BootInfo* boot_info);
+EFI_STATUS load_kernel(EFI_HANDLE ImageHandle, BootInfo* boot_info);
 void* get_rsdp(void);
 void print_string(const CHAR16* str);
 void print_status(const CHAR16* operation, EFI_STATUS status);
