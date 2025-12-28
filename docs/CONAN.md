@@ -2,6 +2,8 @@
 
 MetalOS uses [Conan](https://conan.io/) as a package manager to manage C/C++ dependencies and build configurations.
 
+> **Note**: This documentation uses Conan 2.x syntax and conventions. Conan 2.x is the modern version with improved performance and simplified package references.
+
 ## Overview
 
 Conan provides:
@@ -45,8 +47,8 @@ Once the remote is added, you can install packages from it:
 # Search for available packages
 conan search "*" -r=kernelcenter
 
-# Install specific packages
-conan install <package>/<version>@<user>/<channel> -r=kernelcenter
+# Install specific packages (Conan 2.x syntax)
+conan install --requires=<package>/<version> -r=kernelcenter
 ```
 
 ### Repository Information
@@ -189,15 +191,15 @@ MetalOS currently has no external dependencies (freestanding OS), but future pha
 ### Phase 4 - GPU Support
 ```python
 requires = (
-    "mesa-radv/24.0.0@kernelcenter/stable",
-    "amd-gpu-firmware/navi23@kernelcenter/stable",
+    "mesa-radv/24.0.0",  # Available from KernelCenter
+    "amd-gpu-firmware/[>=navi23]",  # GPU firmware package
 )
 ```
 
 ### Phase 7 - QT6 Integration
 ```python
 requires = (
-    "qt/6.5.3@kernelcenter/minimal",  # Minimal static build
+    "qt/6.5.3",  # Minimal static build from KernelCenter
 )
 ```
 
