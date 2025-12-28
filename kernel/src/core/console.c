@@ -5,17 +5,6 @@
 
 #include "kernel/console.h"
 
-// Simple 8x8 bitmap font (ASCII characters 32-126)
-// This is a minimal font representation
-static const uint8_t font_8x8[96][8] = {
-    {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}, // Space
-    {0x18, 0x3C, 0x3C, 0x18, 0x18, 0x00, 0x18, 0x00}, // !
-    {0x36, 0x36, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}, // "
-    {0x36, 0x36, 0x7F, 0x36, 0x7F, 0x36, 0x36, 0x00}, // #
-    // ... (simplified - would need full 96 characters)
-    // For now, we'll render simple blocks for all chars
-};
-
 static Console console;
 
 void console_init(uint32_t* fb, uint32_t width, uint32_t height, uint32_t pitch) {
