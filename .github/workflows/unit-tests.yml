@@ -22,7 +22,7 @@ jobs:
         set -e  # Exit on any error
         
         sudo apt-get update
-        sudo apt-get install -y build-essential cmake python3 python3-pip
+        sudo apt-get install -y build-essential clang cmake python3 python3-pip
         
         # Install Conan
         pip3 install conan
@@ -38,7 +38,7 @@ jobs:
       run: |
         mkdir -p build
         cd build
-        cmake .. -DCMAKE_TOOLCHAIN_FILE=../build/Release/generators/conan_toolchain.cmake
+        CC=clang CXX=clang++ cmake .. -DCMAKE_TOOLCHAIN_FILE=../build/Release/generators/conan_toolchain.cmake
     
     - name: Build unit tests
       run: |

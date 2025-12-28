@@ -67,7 +67,7 @@ See [docs/ROADMAP.md](docs/ROADMAP.md) for detailed phase breakdown.
 
 ## Building
 
-MetalOS uses **CMake** as its build system for a modern, cross-platform build experience.
+MetalOS uses **CMake** as its build system for a modern, cross-platform build experience. **Clang** is the default compiler.
 
 ### Quick Start (CMake)
 
@@ -87,13 +87,13 @@ ninja
 ninja qemu
 ```
 
-### Building with Clang
+### Building with GCC
 
-MetalOS supports both GCC and Clang compilers. To build with Clang:
+MetalOS supports both Clang (default) and GCC compilers. To build with GCC:
 
 ```bash
 mkdir build && cd build
-CC=clang CXX=clang++ cmake ..
+CC=gcc CXX=g++ cmake ..
 cmake --build .
 ```
 
@@ -101,7 +101,7 @@ Or with Ninja:
 
 ```bash
 mkdir build && cd build
-CC=clang CXX=clang++ cmake -G Ninja ..
+CC=gcc CXX=g++ cmake -G Ninja ..
 ninja
 ```
 
