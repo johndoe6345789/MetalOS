@@ -368,8 +368,16 @@ If CMake can't find the Conan toolchain:
 # Make sure to run conan install first
 conan install . --build=missing
 
-# The toolchain will be at: build/Release/generators/conan_toolchain.cmake
-# Use it with: cmake .. -DCMAKE_TOOLCHAIN_FILE=../build/Release/generators/conan_toolchain.cmake
+# The toolchain location depends on the build type:
+# - Release (default): build/Release/generators/conan_toolchain.cmake
+# - Debug: build/Debug/generators/conan_toolchain.cmake
+
+# For Release build (default):
+cmake .. -DCMAKE_TOOLCHAIN_FILE=../build/Release/generators/conan_toolchain.cmake
+
+# For Debug build:
+conan install . --build=missing -s build_type=Debug
+cmake .. -DCMAKE_TOOLCHAIN_FILE=../build/Debug/generators/conan_toolchain.cmake
 ```
 
 ### Cross-Compiler Not Found

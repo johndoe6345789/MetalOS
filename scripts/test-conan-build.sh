@@ -43,18 +43,23 @@ echo ""
 
 # Verify toolchain was generated
 echo "5. Verifying Conan toolchain generation..."
-if [ ! -f "build/Release/generators/conan_toolchain.cmake" ]; then
-    echo "Error: conan_toolchain.cmake not found"
+TOOLCHAIN_PATH=""
+if [ -f "build/Release/generators/conan_toolchain.cmake" ]; then
+    TOOLCHAIN_PATH="build/Release/generators/conan_toolchain.cmake"
+elif [ -f "build/Debug/generators/conan_toolchain.cmake" ]; then
+    TOOLCHAIN_PATH="build/Debug/generators/conan_toolchain.cmake"
+else
+    echo "Error: conan_toolchain.cmake not found in build/Release/generators/ or build/Debug/generators/"
     exit 1
 fi
-echo "✓ Conan toolchain generated"
+echo "✓ Conan toolchain generated at: $TOOLCHAIN_PATH"
 echo ""
 
 # Configure with CMake using Conan toolchain
 echo "6. Configuring CMake with Conan toolchain..."
 mkdir -p build-conan-test
 cd build-conan-test
-cmake .. -DCMAKE_TOOLCHAIN_FILE=../build/Release/generators/conan_toolchain.cmake
+cmake .. -DCMAKE_TOOLCHAIN_FILE="../$TOOLCHAIN_PATH"
 cd ..
 echo "✓ CMake configuration successful"
 echo ""

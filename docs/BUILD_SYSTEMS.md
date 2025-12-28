@@ -26,7 +26,7 @@ ninja qemu  # Test in QEMU
 pip3 install conan
 conan profile detect --force
 
-# Install dependencies (generates toolchain files)
+# Install dependencies (generates toolchain files - Release by default)
 conan install . --build=missing
 
 # Configure with Conan toolchain
@@ -35,6 +35,10 @@ cmake .. -DCMAKE_TOOLCHAIN_FILE=../build/Release/generators/conan_toolchain.cmak
 
 # Build
 cmake --build .
+
+# Note: The toolchain path matches the build type:
+# - Release (default): build/Release/generators/conan_toolchain.cmake
+# - Debug: build/Debug/generators/conan_toolchain.cmake (use -s build_type=Debug)
 ```
 
 ## Build System Comparison
@@ -169,16 +173,23 @@ conan profile detect --force
 
 #### Build Commands
 ```bash
-# Install dependencies (generates toolchain in build/Release/generators/)
+# Install dependencies (generates toolchain in build/<BuildType>/generators/)
+# Default is Release build type
 conan install . --build=missing
 
-# Alternative: Install with specific settings
-conan install . --build=missing -s build_type=Debug
-conan install . --build=missing -s build_type=Release
+# Alternative: Install with specific build type
+conan install . --build=missing -s build_type=Debug    # Generates in build/Debug/generators/
+conan install . --build=missing -s build_type=Release  # Generates in build/Release/generators/
 
 # Create build directory and configure with Conan-generated toolchain
+# Note: Toolchain path must match the build type used in conan install
 mkdir build && cd build
+
+# For Release build (default)
 cmake .. -DCMAKE_TOOLCHAIN_FILE=../build/Release/generators/conan_toolchain.cmake
+
+# Or for Debug build
+cmake .. -DCMAKE_TOOLCHAIN_FILE=../build/Debug/generators/conan_toolchain.cmake
 
 # Build
 cmake --build .
