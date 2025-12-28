@@ -8,6 +8,9 @@ set(KERNEL_C_SOURCES
     src/main.c
     src/gdt.c
     src/interrupts.c
+    src/memory.c
+    src/pci.c
+    src/timer.c
 )
 
 set(KERNEL_ASM_SOURCES

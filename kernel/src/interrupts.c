@@ -6,6 +6,7 @@
  */
 
 #include "kernel/interrupts.h"
+#include "kernel/timer.h"
 
 // IDT entries (256 interrupts in x86_64)
 static idt_entry_t idt[256];
@@ -143,10 +144,13 @@ void idt_init(void) {
 
 // Generic interrupt handler
 void interrupt_handler(registers_t* regs) {
-    // Handle interrupt based on interrupt number
-    (void)regs;  // Suppress unused warning for now
+    // Handle specific interrupts
+    if (regs->int_no == 32) {
+        // Timer interrupt (IRQ0)
+        timer_handler();
+    }
     
-    // TODO: Dispatch to specific handlers based on regs->int_no
+    // TODO: Handle other interrupts (keyboard, etc.)
     
     // Send EOI (End of Interrupt) to PIC if this was an IRQ
     if (regs->int_no >= 32 && regs->int_no < 48) {
