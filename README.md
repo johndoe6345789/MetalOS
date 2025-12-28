@@ -5,3 +5,106 @@ A OS that is not linux, not bsd and not windows. Ground up OS with just enough b
 - Some changes might be required to QT6 - We can git clone this.
 - Mostly ignoring other peoples OS work.
 - One OS launches this One Full Screen QT6 app. No command line, no cruft.
+
+Key Design Decisions:
+
+✅ No command line/shell - boots directly to QT6 app
+✅ No file system - app embedded in boot image
+✅ Single application only
+✅ Static linking for simplicity
+✅ Minimal implementation philosophy
+✅ Creative freedom for OS components, precision for drivers
+
+Phase 1: Project Foundation ✅ COMPLETE
+
+Review project requirements
+
+Create project structure and documentation
+
+Define architecture (minimal, single-app boot)
+
+Create UEFI bootloader skeleton
+
+Set up build system (Makefiles)
+
+Create basic kernel entry point with framebuffer console
+
+Document development environment setup
+
+Create QT6 Hello World application template
+
+Clarify design: no shell, boot directly to app
+
+Add comprehensive status documentation
+
+Phase 2: UEFI Bootloader (Next)
+
+Implement UEFI protocol interfaces
+
+Graphics initialization (GOP)
+
+Kernel loading from disk
+
+Memory map retrieval
+
+Exit boot services
+
+Jump to kernel with boot info
+Phase 3: Core Kernel Components
+
+GDT/IDT setup
+
+Interrupt handling
+
+Memory management (physical/virtual)
+
+Simple scheduler (single process)
+
+Basic framebuffer console improvements
+Phase 4: Hardware Support
+
+PCI device enumeration
+
+Radeon RX 6600 GPU driver (precise implementation)
+
+Framebuffer management
+
+USB input (keyboard/mouse)
+Phase 5: System Call Interface
+
+Minimal syscall mechanism
+
+Essential syscalls for QT6
+
+User/kernel mode transitions
+Phase 6: User Space & Application
+
+ELF loader (static only)
+
+C++ runtime support
+
+Load QT6 hello world directly (no init)
+
+Static-linked application
+Phase 7: QT6 Port
+
+Identify and port QT6 dependencies
+
+Create MetalOS QPA (Platform Abstraction) plugin
+
+Framebuffer graphics backend
+
+Input event integration
+
+Build QT6 for MetalOS
+Phase 8: Integration & Testing
+
+Build complete bootable image
+
+Full-screen rendering validation
+
+Input handling verification
+
+Test on QEMU
+
+Test on real hardware (AMD64 + RX 6600)
