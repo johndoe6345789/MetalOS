@@ -1,62 +1,72 @@
+"""
+MetalOS Conan Package Configuration
+
+This file defines the dependencies and build configuration for MetalOS.
+Currently, MetalOS is a freestanding OS with no external dependencies,
+but this file is prepared for future use when we integrate:
+- Mesa RADV (GPU driver)
+- QT6 (application framework)
+- Other system libraries
+"""
+
 from conan import ConanFile
 from conan.tools.cmake import CMakeToolchain, CMake, cmake_layout
+
 
 class MetalOSConan(ConanFile):
     name = "metalos"
     version = "0.1.0"
-    
-    # Project metadata
     license = "MIT"
     author = "MetalOS Contributors"
     url = "https://github.com/johndoe6345789/MetalOS"
-    description = "Minimal OS for QT6 on AMD64 + RX 6600"
-    topics = ("os", "kernel", "uefi", "qt6", "minimal")
+    description = "Minimal OS for QT6 applications on AMD64 + Radeon RX 6600"
+    topics = ("os", "uefi", "minimal", "qt6", "gpu")
     
-    # Build settings
     settings = "os", "compiler", "build_type", "arch"
-    
-    # Build options
     options = {
-        "with_tests": [True, False],
-        "qemu_display": ["none", "gtk", "sdl"]
+        "build_bootloader": [True, False],
+        "build_kernel": [True, False],
+        "build_tests": [True, False],
     }
-    
     default_options = {
-        "with_tests": True,
-        "qemu_display": "none"
+        "build_bootloader": True,
+        "build_kernel": True,
+        "build_tests": True,
     }
     
-    # Sources are in the same repo
-    exports_sources = (
-        "CMakeLists.txt",
-        "bootloader/*",
-        "kernel/*",
-        "userspace/*",
-        "tests/*",
-        "scripts/*",
-        "docs/*"
-    )
+    # Specify which generator to use (cmake, make, ninja, etc.)
+    generators = "CMakeDeps"
+    
+    # No external dependencies yet (freestanding OS)
+    # Future dependencies will be added here:
+    # requires = (
+    #     "qt/6.5.0@qt/stable",  # When we port QT6
+    #     "mesa/22.3.0@system/stable",  # When we integrate Mesa RADV
+    # )
     
     def layout(self):
         cmake_layout(self)
     
     def generate(self):
         tc = CMakeToolchain(self)
-        tc.variables["BUILD_TESTING"] = self.options.with_tests
-        tc.variables["QEMU_DISPLAY"] = str(self.options.qemu_display)
+        # Pass options to CMake
+        tc.variables["BUILD_BOOTLOADER"] = self.options.build_bootloader
+        tc.variables["BUILD_KERNEL"] = self.options.build_kernel
+        tc.variables["BUILD_TESTS"] = self.options.build_tests
         tc.generate()
     
     def build(self):
         cmake = CMake(self)
         cmake.configure()
         cmake.build()
-        
-        if self.options.with_tests:
-            cmake.test()
     
     def package(self):
         cmake = CMake(self)
         cmake.install()
     
     def package_info(self):
-        self.cpp_info.libs = ["metalos"]
+        self.cpp_info.libs = []  # MetalOS doesn't provide libraries
+        self.cpp_info.bindirs = ["boot", "boot/efi/EFI/BOOT"]
+        
+        # Set environment variables for tools that need to find our binaries
+        self.buildenv_info.append_path("PATH", self.package_folder)

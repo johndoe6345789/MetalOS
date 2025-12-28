@@ -1,147 +1,161 @@
+# MetalOS Root CMakeLists.txt
 cmake_minimum_required(VERSION 3.16)
 
 project(MetalOS 
     VERSION 0.1.0
-    DESCRIPTION "Minimal OS for QT6 on AMD64 + RX 6600"
-    LANGUAGES C CXX ASM_NASM
+    DESCRIPTION "Minimal OS for QT6 applications"
+    LANGUAGES C CXX ASM
 )
-
-# Enable assembly with NASM
-enable_language(ASM_NASM)
 
 # Set C standard
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
-# Set C++ standard (for QT6 app later)
+# Set C++ standard
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Build type
+# Export compile commands for IDE support
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+# Default to Release build if not specified
 if(NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE Release)
+    set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
 endif()
 
-# Output directories
+# Options
+option(BUILD_BOOTLOADER "Build UEFI bootloader" ON)
+option(BUILD_KERNEL "Build kernel" ON)
+option(BUILD_TESTS "Build unit tests" ON)
+
+# Build output directory
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 
-# Platform-specific flags
-set(CMAKE_SYSTEM_NAME Generic)
-set(CMAKE_SYSTEM_PROCESSOR x86_64)
-
-# Global compile options for bare metal
-add_compile_options(
-    -Wall
-    -Wextra
-    -Werror
-    -ffreestanding
-    -fno-stack-protector
-    -mno-red-zone
-)
-
-# NASM flags for assembly files
-set(CMAKE_ASM_NASM_OBJECT_FORMAT elf64)
-set(CMAKE_ASM_NASM_COMPILE_OBJECT "<CMAKE_ASM_NASM_COMPILER> <INCLUDES> <FLAGS> -f ${CMAKE_ASM_NASM_OBJECT_FORMAT} -o <OBJECT> <SOURCE>")
+# Create build directory for image
+file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/build)
 
 # Add subdirectories
-add_subdirectory(bootloader)
-add_subdirectory(kernel)
-add_subdirectory(userspace)
-
-# Testing
-enable_testing()
-add_subdirectory(tests)
-
-# Custom target to create bootable image
-add_custom_target(image
-    COMMAND ${CMAKE_SOURCE_DIR}/scripts/create_image.sh
-    DEPENDS bootloader kernel
-    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-    COMMENT "Creating bootable disk image"
-)
-
-# QEMU targets for testing
-set(QEMU_DISPLAY "none" CACHE STRING "QEMU display mode (none, gtk, sdl)")
-
-# Find OVMF firmware
-find_file(OVMF_FIRMWARE
-    NAMES OVMF_CODE.fd OVMF.fd ovmf-x86_64.bin
-    PATHS
-        /usr/share/OVMF
-        /usr/share/ovmf
-        /usr/share/edk2-ovmf/x64
-        /usr/share/qemu
-    DOC "UEFI firmware for QEMU"
-)
-
-if(OVMF_FIRMWARE)
-    message(STATUS "Found OVMF firmware: ${OVMF_FIRMWARE}")
-    
-    # QEMU run target
-    add_custom_target(qemu
-        COMMAND qemu-system-x86_64
-            -drive if=pflash,format=raw,readonly=on,file=${OVMF_FIRMWARE}
-            -drive format=raw,file=${CMAKE_BINARY_DIR}/metalos.img
-            -m 512M
-            -serial stdio
-            -display ${QEMU_DISPLAY}
-            -net none
-        DEPENDS image
-        COMMENT "Running MetalOS in QEMU with UEFI"
-    )
-    
-    # QEMU debug target
-    add_custom_target(qemu-debug
-        COMMAND qemu-system-x86_64
-            -drive if=pflash,format=raw,readonly=on,file=${OVMF_FIRMWARE}
-            -drive format=raw,file=${CMAKE_BINARY_DIR}/metalos.img
-            -m 512M
-            -serial stdio
-            -display ${QEMU_DISPLAY}
-            -net none
-            -d int,cpu_reset
-        DEPENDS image
-        COMMENT "Running MetalOS in QEMU with debug output"
-    )
-    
-    # QEMU GDB target
-    add_custom_target(qemu-gdb
-        COMMAND qemu-system-x86_64
-            -drive if=pflash,format=raw,readonly=on,file=${OVMF_FIRMWARE}
-            -drive format=raw,file=${CMAKE_BINARY_DIR}/metalos.img
-            -m 512M
-            -serial stdio
-            -display ${QEMU_DISPLAY}
-            -net none
-            -s -S
-        DEPENDS image
-        COMMENT "Running MetalOS in QEMU with GDB server on port 1234"
-    )
-    
-    # QEMU UEFI test (no OS image)
-    add_custom_target(qemu-uefi-test
-        COMMAND qemu-system-x86_64
-            -drive if=pflash,format=raw,readonly=on,file=${OVMF_FIRMWARE}
-            -m 512M
-            -nographic
-            -net none
-        COMMENT "Testing QEMU UEFI boot (no OS image)"
-    )
-else()
-    message(WARNING "OVMF firmware not found. QEMU targets will not be available.")
-    message(WARNING "Install OVMF:")
-    message(WARNING "  Ubuntu/Debian: sudo apt-get install ovmf")
-    message(WARNING "  Arch Linux: sudo pacman -S edk2-ovmf")
-    message(WARNING "  Fedora: sudo dnf install edk2-ovmf")
+if(BUILD_BOOTLOADER)
+    add_subdirectory(bootloader)
 endif()
 
-# Print build configuration
-message(STATUS "MetalOS Build Configuration:")
+if(BUILD_KERNEL)
+    add_subdirectory(kernel)
+endif()
+
+if(BUILD_TESTS)
+    enable_testing()
+    add_subdirectory(tests)
+endif()
+
+# Custom target to create bootable image
+find_program(MFORMAT mformat)
+find_program(MCOPY mcopy)
+find_program(MDD mdd)
+
+if(MFORMAT AND MCOPY)
+    add_custom_target(image
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/build/iso/EFI/BOOT
+        COMMAND ${CMAKE_COMMAND} -E copy 
+            ${CMAKE_BINARY_DIR}/bootloader/bootx64.efi 
+            ${CMAKE_BINARY_DIR}/build/iso/EFI/BOOT/
+        COMMAND ${CMAKE_COMMAND} -E copy 
+            ${CMAKE_BINARY_DIR}/kernel/metalos.bin 
+            ${CMAKE_BINARY_DIR}/build/iso/
+        COMMAND ${CMAKE_COMMAND} -E echo "Creating disk image..."
+        COMMAND dd if=/dev/zero of=${CMAKE_BINARY_DIR}/build/metalos.img bs=1M count=64 2>/dev/null
+        COMMAND ${MFORMAT} -i ${CMAKE_BINARY_DIR}/build/metalos.img -F -v METALOS ::
+        COMMAND ${MDD} -i ${CMAKE_BINARY_DIR}/build/metalos.img ::/EFI
+        COMMAND ${MDD} -i ${CMAKE_BINARY_DIR}/build/metalos.img ::/EFI/BOOT
+        COMMAND ${MCOPY} -i ${CMAKE_BINARY_DIR}/build/metalos.img 
+            ${CMAKE_BINARY_DIR}/build/iso/EFI/BOOT/bootx64.efi ::/EFI/BOOT/
+        COMMAND ${MCOPY} -i ${CMAKE_BINARY_DIR}/build/metalos.img 
+            ${CMAKE_BINARY_DIR}/build/iso/metalos.bin ::/
+        COMMAND ${CMAKE_COMMAND} -E echo "Success! Created ${CMAKE_BINARY_DIR}/build/metalos.img"
+        DEPENDS bootloader_efi kernel_bin
+        COMMENT "Creating bootable disk image"
+        VERBATIM
+    )
+else()
+    message(WARNING "mtools not found - 'image' target will not be available")
+endif()
+
+# Custom target to run in QEMU
+find_program(QEMU qemu-system-x86_64)
+if(QEMU)
+    # Find OVMF firmware
+    set(OVMF_PATHS
+        /usr/share/OVMF/OVMF_CODE.fd
+        /usr/share/ovmf/OVMF.fd
+        /usr/share/edk2-ovmf/x64/OVMF_CODE.fd
+        /usr/share/qemu/ovmf-x86_64.bin
+    )
+    
+    foreach(ovmf_path ${OVMF_PATHS})
+        if(EXISTS ${ovmf_path})
+            set(OVMF_FIRMWARE ${ovmf_path})
+            break()
+        endif()
+    endforeach()
+    
+    if(OVMF_FIRMWARE)
+        message(STATUS "Found OVMF firmware: ${OVMF_FIRMWARE}")
+        
+        add_custom_target(qemu
+            COMMAND ${QEMU}
+                -drive if=pflash,format=raw,readonly=on,file=${OVMF_FIRMWARE}
+                -drive format=raw,file=${CMAKE_BINARY_DIR}/build/metalos.img
+                -m 512M
+                -serial stdio
+                -display none
+                -net none
+            DEPENDS image
+            COMMENT "Running MetalOS in QEMU"
+            VERBATIM
+        )
+        
+        add_custom_target(qemu-debug
+            COMMAND ${QEMU}
+                -drive if=pflash,format=raw,readonly=on,file=${OVMF_FIRMWARE}
+                -drive format=raw,file=${CMAKE_BINARY_DIR}/build/metalos.img
+                -m 512M
+                -serial stdio
+                -display none
+                -net none
+                -d int,cpu_reset
+            DEPENDS image
+            COMMENT "Running MetalOS in QEMU with debug output"
+            VERBATIM
+        )
+        
+        add_custom_target(qemu-gdb
+            COMMAND ${QEMU}
+                -drive if=pflash,format=raw,readonly=on,file=${OVMF_FIRMWARE}
+                -drive format=raw,file=${CMAKE_BINARY_DIR}/build/metalos.img
+                -m 512M
+                -serial stdio
+                -display none
+                -net none
+                -s -S
+            DEPENDS image
+            COMMENT "Running MetalOS in QEMU with GDB server (port 1234)"
+            VERBATIM
+        )
+    else()
+        message(WARNING "OVMF firmware not found - QEMU targets will not be available")
+    endif()
+else()
+    message(WARNING "QEMU not found - QEMU targets will not be available")
+endif()
+
+# Print configuration summary
+message(STATUS "")
+message(STATUS "MetalOS Configuration:")
 message(STATUS "  Version: ${PROJECT_VERSION}")
-message(STATUS "  Build Type: ${CMAKE_BUILD_TYPE}")
-message(STATUS "  C Compiler: ${CMAKE_C_COMPILER}")
-message(STATUS "  C++ Compiler: ${CMAKE_CXX_COMPILER}")
-message(STATUS "  NASM: ${CMAKE_ASM_NASM_COMPILER}")
-message(STATUS "  QEMU Display: ${QEMU_DISPLAY}")
+message(STATUS "  Build type: ${CMAKE_BUILD_TYPE}")
+message(STATUS "  Bootloader: ${BUILD_BOOTLOADER}")
+message(STATUS "  Kernel: ${BUILD_KERNEL}")
+message(STATUS "  Tests: ${BUILD_TESTS}")
+message(STATUS "")
