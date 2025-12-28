@@ -20,6 +20,8 @@ jobs:
     
     - name: Install dependencies
       run: |
+        set -e  # Exit on any error
+        
         sudo apt-get update
         sudo apt-get install -y \
           build-essential \
@@ -33,12 +35,12 @@ jobs:
     - name: Build bootloader
       run: |
         cd bootloader
-        make || echo "Bootloader build incomplete (expected in early development)"
+        make
     
     - name: Build kernel
       run: |
         cd kernel
-        make || echo "Kernel build incomplete (expected in early development)"
+        make
     
     - name: Create bootable image
       run: |
@@ -46,14 +48,19 @@ jobs:
     
     - name: Start QEMU and capture screenshot
       run: |
+        set -e  # Exit on any error
+        
         # Start Xvfb for headless screenshot capture
         export DISPLAY=:99
         Xvfb :99 -screen 0 1920x1080x24 &
         XVFB_PID=$!
         sleep 2
         
-        # Create a simple disk image with the ISO content
-        dd if=/dev/zero of=build/metalos.img bs=1M count=64
+        # Verify disk image exists (created by 'make image')
+        if [ ! -f build/metalos.img ]; then
+          echo "Error: build/metalos.img not found!"
+          exit 1
+        fi
         
         # Start QEMU in the background with a timeout
         timeout 30s qemu-system-x86_64 \
@@ -68,14 +75,14 @@ jobs:
         # Wait for boot (adjust timing as needed)
         sleep 10
         
-        # Take screenshot using ImageMagick
-        import -window root build/qemu-screenshot.png || echo "Screenshot capture failed"
+        # Take screenshot using ImageMagick (optional - don't fail if this doesn't work)
+        import -window root build/qemu-screenshot.png || echo "Screenshot capture failed (non-fatal)"
         
-        # Gracefully stop QEMU
+        # Gracefully stop QEMU (don't fail if already stopped)
         kill $QEMU_PID 2>/dev/null || true
         wait $QEMU_PID 2>/dev/null || true
         
-        # Stop Xvfb
+        # Stop Xvfb (don't fail if already stopped)
         kill $XVFB_PID 2>/dev/null || true
         
         echo "Boot test completed"

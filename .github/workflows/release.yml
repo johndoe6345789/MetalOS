@@ -19,6 +19,8 @@ jobs:
     
     - name: Install build dependencies
       run: |
+        set -e  # Exit on any error
+        
         sudo apt-get update
         sudo apt-get install -y \
           build-essential \
@@ -31,12 +33,12 @@ jobs:
     - name: Build bootloader
       run: |
         cd bootloader
-        make || echo "Warning: Bootloader build incomplete (expected in early development)"
+        make
     
     - name: Build kernel
       run: |
         cd kernel
-        make || echo "Warning: Kernel build incomplete (expected in early development)"
+        make
     
     - name: Create bootable image
       run: |
@@ -44,24 +46,35 @@ jobs:
     
     - name: Prepare release directory
       run: |
+        set -e  # Exit on any error
+        
         mkdir -p release
         
-        # Copy the bootable disk image
+        # Copy the bootable disk image (required)
         if [ -f build/metalos.img ]; then
           cp build/metalos.img release/
           echo "✓ Copied metalos.img"
+        else
+          echo "Error: build/metalos.img not found!"
+          exit 1
         fi
         
-        # Copy bootloader if it exists
+        # Copy bootloader if it exists (required)
         if [ -f bootloader/bootx64.efi ]; then
           cp bootloader/bootx64.efi release/
           echo "✓ Copied bootx64.efi"
+        else
+          echo "Error: bootloader/bootx64.efi not found!"
+          exit 1
         fi
         
-        # Copy kernel if it exists
+        # Copy kernel if it exists (required)
         if [ -f kernel/metalos.bin ]; then
           cp kernel/metalos.bin release/
           echo "✓ Copied metalos.bin"
+        else
+          echo "Error: kernel/metalos.bin not found!"
+          exit 1
         fi
         
         # Copy QEMU instructions
@@ -147,6 +160,8 @@ jobs:
     
     - name: Create release archive
       run: |
+        set -e  # Exit on any error
+        
         cd release
         zip -r ../metalos-release.zip .
         cd ..
