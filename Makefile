@@ -12,11 +12,11 @@ test:
 
 bootloader:
 	@echo "Building bootloader..."
-	@cd bootloader && $(MAKE) || echo "Warning: Bootloader build failed (expected in early development)"
+	@cd bootloader && $(MAKE) || echo "Warning: Bootloader build failed (expected during Phase 1 development)"
 
 kernel:
 	@echo "Building kernel..."
-	@cd kernel && $(MAKE) || echo "Warning: Kernel build failed (expected in early development)"
+	@cd kernel && $(MAKE) || echo "Warning: Kernel build failed (expected during Phase 1 development)"
 
 # Create bootable disk image for UEFI/QEMU
 image: bootloader kernel

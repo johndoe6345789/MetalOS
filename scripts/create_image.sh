@@ -15,16 +15,21 @@ if [ ! -f "bootloader/bootx64.efi" ]; then
     echo "Warning: bootloader/bootx64.efi not found."
     echo "Creating placeholder bootloader for testing..."
     mkdir -p bootloader
-    # Create a minimal placeholder EFI file
-    echo "Placeholder UEFI bootloader" > bootloader/bootx64.efi
+    # NOTE: This creates a text placeholder, NOT a valid EFI executable.
+    # UEFI firmware will fail to execute it, but the image structure will be correct.
+    # This is intentional during early development (Phase 1).
+    # In Phase 2+, a proper UEFI bootloader will be built.
+    echo "Placeholder UEFI bootloader - not executable" > bootloader/bootx64.efi
 fi
 
 if [ ! -f "kernel/metalos.bin" ]; then
     echo "Warning: kernel/metalos.bin not found."
     echo "Creating placeholder kernel for testing..."
     mkdir -p kernel
-    # Create a minimal placeholder kernel
-    echo "Placeholder kernel" > kernel/metalos.bin
+    # NOTE: This creates a text placeholder, NOT a valid kernel binary.
+    # This is intentional during early development (Phase 1).
+    # In Phase 3+, a proper kernel binary will be built.
+    echo "Placeholder kernel - not executable" > kernel/metalos.bin
 fi
 
 # Create directories
