@@ -67,18 +67,18 @@ See [docs/ROADMAP.md](docs/ROADMAP.md) for detailed phase breakdown.
 
 ## Building
 
-MetalOS supports **multiple build systems** - choose what works best for you!
+MetalOS uses **CMake** as its build system for a modern, cross-platform build experience.
 
-### Quick Start (Make - Traditional)
+### Quick Start (CMake)
 
 ```bash
-make all      # Build bootloader, kernel, and userspace
-make test     # Run unit tests
-make qemu     # Test in QEMU with UEFI firmware
-make clean    # Clean build artifacts
+mkdir build && cd build
+cmake ..
+cmake --build .
+cmake --build . --target qemu
 ```
 
-### CMake + Ninja (Fast Modern Build)
+### Using Ninja (Faster Builds)
 
 ```bash
 mkdir build && cd build
@@ -103,19 +103,15 @@ The easiest way to build MetalOS with all dependencies:
 ```bash
 ./scripts/docker-build.sh              # Build Docker image
 ./scripts/docker-run.sh scripts/setup-deps.sh  # Setup dependencies
-./scripts/docker-run.sh make all       # Build everything
-./scripts/docker-run.sh make qemu      # Test in QEMU
+./scripts/docker-run.sh cmake --build build    # Build everything
 ```
-
-**See [docs/BUILD_SYSTEMS.md](docs/BUILD_SYSTEMS.md) for detailed comparison and usage of all build systems.**
 
 **QEMU UEFI Testing**:
 ```bash
-make qemu                      # Boot in QEMU with UEFI (headless)
-make qemu QEMU_DISPLAY=gtk     # Boot with graphical display
-make qemu-debug                # Boot with debug output
-make qemu-gdb                  # Boot with GDB debugging
-make qemu-uefi-test            # Test UEFI firmware setup
+cmake --build . --target qemu          # Boot in QEMU with UEFI (headless)
+cmake --build . --target qemu-debug    # Boot with debug output
+cmake --build . --target qemu-gdb      # Boot with GDB debugging
+cmake --build . --target qemu-uefi-test # Test UEFI firmware setup
 ```
 
 See [docs/BUILD.md](docs/BUILD.md) for detailed build instructions and [docs/TESTING.md](docs/TESTING.md) for testing guide.
