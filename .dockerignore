@@ -1,0 +1,55 @@
+# Docker ignore file for MetalOS
+# Excludes unnecessary files from Docker build context
+
+# Build artifacts
+build/
+*.o
+*.d
+*.a
+*.so
+*.bin
+*.efi
+*.elf
+*.img
+*.iso
+*.log
+
+# Git directory
+.git/
+.gitignore
+.gitattributes
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+*.sublime-*
+
+# OS specific
+.DS_Store
+Thumbs.db
+
+# Temporary files
+tmp/
+*.tmp
+
+# GitHub workflows (not needed in container)
+.github/
+
+# Documentation (will be copied separately if needed)
+docs/
+
+# Test artifacts
+tests/unit/test_*
+!tests/unit/*.c
+
+# Qt specific build artifacts
+*.pro.user
+*.pro.user.*
+moc_*.cpp
+moc_*.h
+qrc_*.cpp
+ui_*.h
+.qmake.stash

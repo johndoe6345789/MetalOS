@@ -1,6 +1,56 @@
 # Building MetalOS
 
-## Prerequisites
+MetalOS can be built either using Docker (recommended for consistent builds) or natively on your system.
+
+## Docker Build (Recommended)
+
+The easiest way to build MetalOS is using Docker, which provides a pre-configured environment with all dependencies.
+
+### Prerequisites
+
+- **Docker**: Docker Engine 20.10 or later
+  - [Install Docker](https://docs.docker.com/get-docker/)
+
+### Quick Start
+
+```bash
+# 1. Build the Docker image
+./scripts/docker-build.sh
+
+# 2. Setup dependencies (downloads AMD GPU firmware, etc.)
+./scripts/docker-run.sh scripts/setup-deps.sh
+
+# 3. Build MetalOS
+./scripts/docker-run.sh make all
+
+# 4. Test in QEMU (headless mode)
+./scripts/docker-run.sh make qemu
+
+# 5. Optional: Interactive shell in container
+./scripts/docker-run.sh /bin/bash
+```
+
+### What's Included in Docker
+
+The Docker image includes:
+- **Build tools**: GCC, NASM, Make, CMake, Meson
+- **QEMU**: For testing with UEFI firmware
+- **OVMF**: UEFI firmware for QEMU
+- **Dependency management**: Scripts to download AMD firmware, Mesa RADV, QT6
+
+### Docker Build Benefits
+
+- ✅ Consistent build environment across all platforms
+- ✅ No need to install cross-compiler manually
+- ✅ Pre-configured QEMU and OVMF setup
+- ✅ Isolated from host system
+- ✅ Easy CI/CD integration
+
+## Native Build
+
+If you prefer to build natively without Docker:
+
+### Prerequisites
 
 ### Required Tools
 
@@ -160,6 +210,46 @@ make qemu-uefi-test
 ```
 
 This boots directly to the UEFI shell, confirming your QEMU+OVMF setup works correctly.
+
+## Managing Dependencies
+
+MetalOS requires several third-party dependencies for GPU support and application framework.
+
+### Dependency Setup Script
+
+Use the provided script to download and setup dependencies:
+
+```bash
+# Setup all dependencies
+./scripts/setup-deps.sh all
+
+# Or setup individually
+./scripts/setup-deps.sh firmware    # AMD GPU firmware blobs
+./scripts/setup-deps.sh ovmf        # UEFI firmware
+./scripts/setup-deps.sh mesa        # Mesa RADV (planned)
+./scripts/setup-deps.sh qt6         # QT6 framework (planned)
+```
+
+### Required Dependencies
+
+1. **AMD GPU Firmware** (`deps/firmware/`)
+   - Radeon RX 6600 (Navi 23) firmware files
+   - Automatically downloaded from linux-firmware repository
+   - Files: `dimgrey_cavefish_*.bin`
+
+2. **OVMF UEFI Firmware** (`deps/ovmf/`)
+   - EDK II OVMF for QEMU testing
+   - Copied from system installation or downloaded
+
+3. **Mesa RADV** (`deps/mesa-radv/`) - Planned for Phase 4
+   - Vulkan driver for AMD GPUs
+   - Will be configured to use custom kernel interface
+
+4. **QT6 Framework** (`deps/qt6/`) - Planned for Phase 7
+   - Minimal static build for the single application
+   - QtCore, QtGui, QtWidgets modules only
+
+See [deps/README.md](../deps/README.md) for detailed dependency documentation.
 
 ## Testing on Real Hardware
 
