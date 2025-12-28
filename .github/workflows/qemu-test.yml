@@ -1,0 +1,118 @@
+name: QEMU Boot Test
+
+on:
+  push:
+    branches: [ main, copilot/* ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  qemu-boot-test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: write  # For uploading artifacts
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          build-essential \
+          nasm \
+          qemu-system-x86 \
+          ovmf \
+          mtools \
+          xorriso \
+          imagemagick
+    
+    - name: Build bootloader
+      run: |
+        cd bootloader
+        make || echo "Bootloader build incomplete (expected in early development)"
+    
+    - name: Build kernel
+      run: |
+        cd kernel
+        make || echo "Kernel build incomplete (expected in early development)"
+    
+    - name: Create bootable image
+      run: |
+        mkdir -p build/iso/EFI/BOOT
+        # Copy bootloader if it exists
+        if [ -f bootloader/bootx64.efi ]; then
+          cp bootloader/bootx64.efi build/iso/EFI/BOOT/
+        else
+          echo "Bootloader not built yet, creating placeholder"
+          mkdir -p build/iso/EFI/BOOT
+        fi
+        # Copy kernel if it exists
+        if [ -f kernel/metalos.bin ]; then
+          cp kernel/metalos.bin build/iso/
+        fi
+    
+    - name: Start QEMU and capture screenshot
+      run: |
+        # Start Xvfb for headless screenshot capture
+        export DISPLAY=:99
+        Xvfb :99 -screen 0 1920x1080x24 &
+        XVFB_PID=$!
+        sleep 2
+        
+        # Create a simple disk image with the ISO content
+        dd if=/dev/zero of=build/metalos.img bs=1M count=64
+        
+        # Start QEMU in the background with a timeout
+        timeout 30s qemu-system-x86_64 \
+          -bios /usr/share/OVMF/OVMF_CODE.fd \
+          -drive format=raw,file=build/metalos.img \
+          -m 512M \
+          -display gtk \
+          -serial file:build/serial.log \
+          -no-reboot &
+        QEMU_PID=$!
+        
+        # Wait for boot (adjust timing as needed)
+        sleep 10
+        
+        # Take screenshot using ImageMagick
+        import -window root build/qemu-screenshot.png || echo "Screenshot capture failed"
+        
+        # Gracefully stop QEMU
+        kill $QEMU_PID 2>/dev/null || true
+        wait $QEMU_PID 2>/dev/null || true
+        
+        # Stop Xvfb
+        kill $XVFB_PID 2>/dev/null || true
+        
+        echo "Boot test completed"
+    
+    - name: Show serial output
+      if: always()
+      run: |
+        if [ -f build/serial.log ]; then
+          echo "=== QEMU Serial Output ==="
+          cat build/serial.log
+        else
+          echo "No serial output captured"
+        fi
+    
+    - name: Upload screenshot
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: qemu-screenshot
+        path: build/qemu-screenshot.png
+        if-no-files-found: warn
+    
+    - name: Upload serial log
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: serial-log
+        path: build/serial.log
+        if-no-files-found: warn

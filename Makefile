@@ -1,9 +1,14 @@
 # MetalOS Main Makefile
 # Builds bootloader, kernel, and creates bootable image
 
-.PHONY: all bootloader kernel image qemu qemu-debug qemu-gdb clean distclean
+.PHONY: all bootloader kernel image qemu qemu-debug qemu-gdb test clean distclean
 
 all: bootloader kernel
+
+# Run unit tests
+test:
+	@echo "Running unit tests..."
+	@cd tests && $(MAKE) test
 
 bootloader:
 	@echo "Building bootloader..."
@@ -58,6 +63,7 @@ clean:
 	@echo "Cleaning build artifacts..."
 	@cd bootloader && $(MAKE) clean
 	@cd kernel && $(MAKE) clean
+	@cd tests && $(MAKE) clean
 	@rm -rf build
 
 distclean: clean

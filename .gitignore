@@ -20,6 +20,10 @@ build/
 bootloader/build/
 kernel/build/
 
+# Test binaries
+tests/unit/test_*
+!tests/unit/*.c
+
 # Precompiled Headers
 *.gch
 *.pch
@@ -80,3 +84,4 @@ ui_*.h
 # Don't ignore example files
 !docs/examples/*.bin
 
+_codeql_detected_source_root
