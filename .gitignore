@@ -20,6 +20,27 @@ build/
 build-*/
 bootloader/build/
 kernel/build/
+_codeql_build_dir/
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+cmake-build-*/
+cmake_install.cmake
+install_manifest.txt
+compile_commands.json
+CTestTestfile.cmake
+_deps/
+
+# Ninja
+.ninja_deps
+.ninja_log
+
+# Conan
+conan.lock
+conaninfo.txt
+conanbuildinfo.*
+graph_info.json
 
 # CMake specific
 CMakeCache.txt
