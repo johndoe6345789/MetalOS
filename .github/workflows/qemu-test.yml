@@ -42,18 +42,7 @@ jobs:
     
     - name: Create bootable image
       run: |
-        mkdir -p build/iso/EFI/BOOT
-        # Copy bootloader if it exists
-        if [ -f bootloader/bootx64.efi ]; then
-          cp bootloader/bootx64.efi build/iso/EFI/BOOT/
-        else
-          echo "Bootloader not built yet, creating placeholder"
-          mkdir -p build/iso/EFI/BOOT
-        fi
-        # Copy kernel if it exists
-        if [ -f kernel/metalos.bin ]; then
-          cp kernel/metalos.bin build/iso/
-        fi
+        make image
     
     - name: Start QEMU and capture screenshot
       run: |
@@ -115,4 +104,12 @@ jobs:
       with:
         name: serial-log
         path: build/serial.log
+        if-no-files-found: warn
+    
+    - name: Upload built disk image
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: metalos-disk-image
+        path: build/metalos.img
         if-no-files-found: warn
