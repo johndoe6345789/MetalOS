@@ -67,7 +67,36 @@ See [docs/ROADMAP.md](docs/ROADMAP.md) for detailed phase breakdown.
 
 ## Building
 
-### Docker Build (Recommended)
+MetalOS supports **multiple build systems** - choose what works best for you!
+
+### Quick Start (Make - Traditional)
+
+```bash
+make all      # Build bootloader, kernel, and userspace
+make test     # Run unit tests
+make qemu     # Test in QEMU with UEFI firmware
+make clean    # Clean build artifacts
+```
+
+### CMake + Ninja (Fast Modern Build)
+
+```bash
+mkdir build && cd build
+cmake -G Ninja ..
+ninja
+ninja qemu
+```
+
+### Conan (With Package Management)
+
+```bash
+mkdir build && cd build
+conan install .. --build=missing
+cmake .. -DCMAKE_TOOLCHAIN_FILE=../build/Release/generators/conan_toolchain.cmake -G Ninja
+ninja
+```
+
+### Docker Build (Recommended for Consistency)
 
 The easiest way to build MetalOS with all dependencies:
 
@@ -78,14 +107,7 @@ The easiest way to build MetalOS with all dependencies:
 ./scripts/docker-run.sh make qemu      # Test in QEMU
 ```
 
-### Native Build
-
-```bash
-make all      # Build bootloader, kernel, and userspace
-make test     # Run unit tests
-make qemu     # Test in QEMU with UEFI firmware
-make clean    # Clean build artifacts
-```
+**See [docs/BUILD_SYSTEMS.md](docs/BUILD_SYSTEMS.md) for detailed comparison and usage of all build systems.**
 
 **QEMU UEFI Testing**:
 ```bash
