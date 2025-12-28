@@ -1,8 +1,9 @@
-/*
- * MetalOS Kernel - Interrupt Handling
+/**
+ * @file interrupts.cpp
+ * @brief Implementation of interrupt descriptor table and interrupt handling
  * 
- * Minimal IDT and interrupt handlers
- * Supports both PIC (legacy) and APIC (multicore) modes
+ * Manages CPU exceptions and hardware interrupts through the IDT.
+ * Supports both legacy PIC and modern APIC interrupt controllers.
  */
 
 #include "kernel/interrupts.h"
@@ -10,7 +11,11 @@
 #include "kernel/smp.h"
 #include "kernel/apic.h"
 
-// I/O port access functions
+/**
+ * @brief Write a byte to an I/O port
+ * @param port I/O port address
+ * @param value Byte value to write
+ */
 static inline void outb(uint16_t port, uint8_t value) {
     __asm__ volatile("outb %0, %1" : : "a"(value), "Nd"(port));
 }
@@ -34,12 +39,34 @@ extern "C" {
     void irq0(void); void irq1(void);
 }
 
-// InterruptManager class implementation
+/* InterruptManager class implementation */
+
+/**
+ * @brief Constructor - initializes IDT pointer structure
+ */
 InterruptManager::InterruptManager() {
     idtPtr.limit = (sizeof(idt_entry_t) * 256) - 1;
     idtPtr.base = (uint64_t)&idt;
 }
 
+/**
+ * @brief Set an IDT entry to point to an interrupt handler
+ * 
+ * In 64-bit mode, IDT entries are 16 bytes and contain:
+ * - 64-bit handler address (split across three fields)
+ * - 16-bit code segment selector
+ * - Type and attributes (present, DPL, gate type)
+ * - IST (Interrupt Stack Table) offset (usually 0)
+ * 
+ * @param num Interrupt vector number (0-255)
+ * @param handler Address of interrupt handler function
+ * @param selector Code segment selector (0x08 for kernel code)
+ * @param flags Type and attribute byte:
+ *              - Bit 7: Present (1)
+ *              - Bits 5-6: DPL (0 for kernel)
+ *              - Bits 0-4: Gate type (0xE for interrupt gate)
+ *              Common value: 0x8E = Present, DPL=0, Interrupt Gate
+ */
 void InterruptManager::setGate(uint8_t num, uint64_t handler, uint16_t selector, uint8_t flags) {
     idt[num].offset_low = handler & 0xFFFF;
     idt[num].offset_mid = (handler >> 16) & 0xFFFF;
@@ -50,6 +77,26 @@ void InterruptManager::setGate(uint8_t num, uint64_t handler, uint16_t selector,
     idt[num].zero = 0;
 }
 
+/**
+ * @brief Remap the 8259 PIC to avoid conflicts with CPU exceptions
+ * 
+ * By default, the PIC uses IRQ vectors 0-15, which overlap with CPU exception
+ * vectors 0-31. This causes confusion when a hardware interrupt has the same
+ * vector as a CPU exception (e.g., IRQ 8 vs Double Fault exception 8).
+ * 
+ * We remap the PIC so that:
+ * - Master PIC (IRQ 0-7) → vectors 32-39
+ * - Slave PIC (IRQ 8-15) → vectors 40-47
+ * 
+ * The remapping process uses ICW (Initialization Command Words):
+ * - ICW1: Start initialization (0x11 = ICW4 needed, cascade mode)
+ * - ICW2: Set vector offset (0x20 for master, 0x28 for slave)
+ * - ICW3: Set up cascade (master: slave on IRQ2, slave: cascade identity)
+ * - ICW4: Set 8086 mode
+ * 
+ * After remapping, all IRQs are masked (disabled) initially. Individual IRQs
+ * must be explicitly unmasked to receive interrupts.
+ */
 void InterruptManager::remapPIC() {
     // ICW1: Initialize PIC
     outb(PIC1_COMMAND, 0x11);
@@ -72,6 +119,30 @@ void InterruptManager::remapPIC() {
     outb(PIC2_DATA, 0xFF);
 }
 
+/**
+ * @brief Initialize the IDT and enable interrupts
+ * 
+ * This function performs complete interrupt subsystem initialization:
+ * 1. Clear all 256 IDT entries
+ * 2. Install exception handlers (ISR 0-31) for CPU exceptions
+ * 3. Remap the PIC to avoid conflicts
+ * 4. Install IRQ handlers (32-47) for hardware interrupts
+ * 5. Load IDT using LIDT instruction
+ * 6. Enable interrupts using STI instruction
+ * 
+ * CPU exceptions (0-31) include:
+ * - 0: Divide by zero
+ * - 6: Invalid opcode
+ * - 13: General protection fault
+ * - 14: Page fault
+ * etc.
+ * 
+ * Hardware IRQs (32-47) include:
+ * - 32 (IRQ 0): Timer
+ * - 33 (IRQ 1): Keyboard
+ * - 44 (IRQ 12): PS/2 Mouse
+ * etc.
+ */
 void InterruptManager::init() {
     // Clear IDT
     for (int i = 0; i < 256; i++) {
@@ -126,6 +197,25 @@ void InterruptManager::init() {
     __asm__ volatile("sti");
 }
 
+/**
+ * @brief Main interrupt handler dispatcher
+ * 
+ * This function is called from the assembly interrupt stubs (ISRs/IRQs).
+ * It receives the saved CPU state and dispatches to specific handlers
+ * based on the interrupt number.
+ * 
+ * Process:
+ * 1. Check interrupt number
+ * 2. Call specific handler if needed (e.g., timer for IRQ 0)
+ * 3. Send End-Of-Interrupt signal to PIC or APIC
+ * 
+ * For hardware IRQs (32-47):
+ * - Check if using APIC (multicore) or PIC (legacy)
+ * - Send EOI to appropriate controller
+ * - For slave PIC IRQs (40-47), must send EOI to both PICs
+ * 
+ * @param regs Pointer to saved CPU register state
+ */
 void InterruptManager::handleInterrupt(registers_t* regs) {
     // Handle specific interrupts
     if (regs->int_no == 32) {

@@ -18,7 +18,23 @@
 static EFI_SYSTEM_TABLE* gST = NULL;
 static EFI_BOOT_SERVICES* gBS = NULL;
 
-// Helper: Compare GUIDs
+/**
+ * @brief Compares two UEFI GUIDs for equality
+ * 
+ * GUIDs (Globally Unique Identifiers) are 128-bit values used by UEFI to identify
+ * protocols, tables, and other system resources. This function performs a field-by-field
+ * comparison of two GUID structures.
+ * 
+ * @param a Pointer to the first GUID to compare
+ * @param b Pointer to the second GUID to compare
+ * @return 1 if the GUIDs are equal, 0 if they differ
+ * 
+ * @note The GUID structure consists of:
+ *       - Data1: 32-bit value
+ *       - Data2: 16-bit value
+ *       - Data3: 16-bit value
+ *       - Data4: 8-byte array
+ */
 static int guid_compare(const EFI_GUID* a, const EFI_GUID* b) {
     if (a->Data1 != b->Data1) return 0;
     if (a->Data2 != b->Data2) return 0;
@@ -29,14 +45,42 @@ static int guid_compare(const EFI_GUID* a, const EFI_GUID* b) {
     return 1;
 }
 
-// Helper: Memory set
+/**
+ * @brief Sets a block of memory to a specified value
+ * 
+ * This is a simple implementation of memset that works in the UEFI environment.
+ * It fills the first n bytes of the memory area pointed to by s with the constant
+ * byte c. This is used for initializing structures and buffers.
+ * 
+ * @param s Pointer to the memory block to fill
+ * @param c Value to set (converted to unsigned char)
+ * @param n Number of bytes to set
+ * @return Pointer to the memory block s
+ * 
+ * @note This function operates byte-by-byte, so it's not optimized for large blocks.
+ *       However, for bootloader usage with small structures, this is sufficient.
+ */
 static VOID* efi_memset(VOID* s, int c, UINTN n) {
     unsigned char* p = s;
     while (n--) *p++ = (unsigned char)c;
     return s;
 }
 
-// Helper: Memory copy
+/**
+ * @brief Copies a block of memory from source to destination
+ * 
+ * This is a simple implementation of memcpy that works in the UEFI environment.
+ * It copies n bytes from memory area src to memory area dest. The memory areas
+ * must not overlap (use memmove if they might overlap).
+ * 
+ * @param dest Pointer to the destination memory block
+ * @param src Pointer to the source memory block
+ * @param n Number of bytes to copy
+ * @return Pointer to the destination memory block dest
+ * 
+ * @warning The memory areas must not overlap. If they do, the behavior is undefined.
+ * @note This function operates byte-by-byte for simplicity and UEFI compatibility.
+ */
 static VOID* efi_memcpy(VOID* dest, const VOID* src, UINTN n) {
     unsigned char* d = dest;
     const unsigned char* s = src;
@@ -44,8 +88,18 @@ static VOID* efi_memcpy(VOID* dest, const VOID* src, UINTN n) {
     return dest;
 }
 
-/*
- * Print a string to the UEFI console
+/**
+ * @brief Prints a UTF-16 string to the UEFI console output
+ * 
+ * Uses the UEFI Simple Text Output Protocol to display a string on the console.
+ * This is the primary method for user feedback during the boot process.
+ * 
+ * @param str Pointer to a null-terminated UTF-16 string to display
+ * 
+ * @note UEFI uses UTF-16 encoding (CHAR16*) rather than ASCII or UTF-8.
+ *       Literal strings should be prefixed with 'u' (e.g., u"Hello").
+ * @note This function does nothing if the console output protocol is unavailable,
+ *       which may happen in headless systems.
  */
 void print_string(const CHAR16* str) {
     if (gST && gST->ConOut) {
@@ -53,8 +107,18 @@ void print_string(const CHAR16* str) {
     }
 }
 
-/*
- * Print operation status
+/**
+ * @brief Prints an operation description followed by its status result
+ * 
+ * This helper function displays the result of a UEFI operation in a consistent
+ * format: the operation description followed by either " [OK]" or " [FAILED]"
+ * depending on the status code.
+ * 
+ * @param operation UTF-16 string describing the operation that was performed
+ * @param status UEFI status code returned by the operation (EFI_SUCCESS or error)
+ * 
+ * @note EFI_SUCCESS (0) indicates success; any other value indicates failure.
+ * @see print_string() for the underlying output mechanism
  */
 void print_status(const CHAR16* operation, EFI_STATUS status) {
     print_string(operation);
@@ -65,8 +129,28 @@ void print_status(const CHAR16* operation, EFI_STATUS status) {
     }
 }
 
-/*
- * Initialize graphics output protocol
+/**
+ * @brief Initializes the graphics output and retrieves framebuffer information
+ * 
+ * This function locates the UEFI Graphics Output Protocol (GOP) and extracts
+ * framebuffer details needed by the kernel for direct graphics rendering.
+ * The GOP provides a linear framebuffer that can be used for pixel-based graphics.
+ * 
+ * The function stores the following information in boot_info:
+ * - framebuffer_base: Physical address of the framebuffer in memory
+ * - framebuffer_width: Horizontal resolution in pixels
+ * - framebuffer_height: Vertical resolution in pixels
+ * - framebuffer_pitch: Bytes per scanline (width * bytes_per_pixel, may include padding)
+ * - framebuffer_bpp: Bits per pixel (assumed 32-bit BGRA format)
+ * 
+ * @param ImageHandle Handle to the bootloader image (currently unused)
+ * @param boot_info Pointer to BootInfo structure to receive framebuffer information
+ * @return EFI_SUCCESS if GOP was located and framebuffer info was retrieved,
+ *         or an error code if GOP is unavailable
+ * 
+ * @note This function uses the current graphics mode without attempting to change it.
+ *       The resolution is whatever UEFI firmware has already configured.
+ * @note The framebuffer format is assumed to be 32-bit (4 bytes per pixel).
  */
 EFI_STATUS initialize_graphics(EFI_HANDLE ImageHandle, BootInfo* boot_info) {
     (void)ImageHandle;
@@ -93,8 +177,28 @@ EFI_STATUS initialize_graphics(EFI_HANDLE ImageHandle, BootInfo* boot_info) {
     return EFI_SUCCESS;
 }
 
-/*
- * Load kernel from disk
+/**
+ * @brief Loads the kernel binary from the boot disk into memory
+ * 
+ * This function performs the following steps to load the kernel:
+ * 1. Obtains the Loaded Image Protocol to identify the boot device
+ * 2. Opens the Simple File System Protocol on the boot device
+ * 3. Opens the root directory of the file system
+ * 4. Reads the kernel file "metalos.bin" from the root directory
+ * 5. Allocates a temporary buffer and reads the kernel into it
+ * 6. Copies the kernel to its final load address (KERNEL_LOAD_ADDRESS = 0x100000 = 1MB)
+ * 7. Stores kernel location and size in boot_info for the kernel's use
+ * 
+ * @param ImageHandle Handle to the bootloader image, used to find the boot device
+ * @param boot_info Pointer to BootInfo structure to receive kernel location and size
+ * @return EFI_SUCCESS if kernel was loaded successfully, or an error code on failure
+ * 
+ * @note The kernel file must be named "metalos.bin" and located in the root directory
+ *       of the boot device (typically the EFI System Partition).
+ * @note The kernel is copied to physical address 0x100000 (1MB), which is a standard
+ *       location above the legacy BIOS area and below the 16MB mark.
+ * @note This function allocates memory using UEFI's AllocatePool, which is only valid
+ *       until ExitBootServices is called. The kernel is copied to a permanent location.
  */
 EFI_STATUS load_kernel(EFI_HANDLE ImageHandle, BootInfo* boot_info) {
     EFI_STATUS status;
@@ -181,8 +285,26 @@ EFI_STATUS load_kernel(EFI_HANDLE ImageHandle, BootInfo* boot_info) {
     return EFI_SUCCESS;
 }
 
-/*
- * Get ACPI RSDP (Root System Description Pointer)
+/**
+ * @brief Retrieves the ACPI RSDP (Root System Description Pointer) from UEFI
+ * 
+ * The RSDP is the entry point to ACPI (Advanced Configuration and Power Interface)
+ * tables, which provide information about the system hardware, including:
+ * - Multiple APIC Description Table (MADT) for SMP initialization
+ * - PCI routing tables
+ * - Power management configuration
+ * - Hardware description
+ * 
+ * This function searches the UEFI Configuration Table for the ACPI 2.0+ table GUID
+ * and returns a pointer to the RSDP structure if found.
+ * 
+ * @return Pointer to the RSDP structure if found, NULL if not available
+ * 
+ * @note ACPI 2.0+ is preferred over ACPI 1.0 because it uses 64-bit addresses.
+ * @note The RSDP pointer remains valid after ExitBootServices is called since it
+ *       points to firmware-provided tables in reserved memory.
+ * @note The kernel can use this to locate ACPI tables for multicore initialization
+ *       and hardware discovery.
  */
 void* get_rsdp(void) {
     EFI_GUID acpi_20_guid = EFI_ACPI_20_TABLE_GUID;
@@ -197,8 +319,37 @@ void* get_rsdp(void) {
     return NULL;
 }
 
-/*
- * Main entry point for bootloader
+/**
+ * @brief Main entry point for the UEFI bootloader
+ * 
+ * This is the entry point called by UEFI firmware when the bootloader is loaded.
+ * It performs the following steps in order:
+ * 
+ * 1. Initialize UEFI services and boot_info structure
+ * 2. Display boot banner
+ * 3. Initialize graphics and get framebuffer information
+ * 4. Load the kernel binary from disk
+ * 5. Get ACPI RSDP for hardware information
+ * 6. Get UEFI memory map
+ * 7. Exit UEFI boot services (point of no return - transfers control from firmware)
+ * 8. Jump to the kernel entry point
+ * 
+ * After ExitBootServices is called:
+ * - UEFI Boot Services are no longer available
+ * - UEFI Runtime Services remain available
+ * - The kernel takes full control of the system
+ * - No more firmware calls can be made except runtime services
+ * 
+ * @param ImageHandle Handle to this bootloader image, used for protocol access
+ * @param SystemTable Pointer to UEFI System Table containing all UEFI services
+ * @return EFI_SUCCESS on successful boot (should never return),
+ *         or an error code if boot fails
+ * 
+ * @note If ExitBootServices fails on the first attempt, the memory map may have
+ *       changed. This function automatically retries once with an updated memory map.
+ * @note The kernel entry point is assumed to be at KERNEL_LOAD_ADDRESS (0x100000).
+ * @note The kernel receives a pointer to the BootInfo structure containing all
+ *       information needed to initialize the system.
  */
 EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable) {
     EFI_STATUS status;
