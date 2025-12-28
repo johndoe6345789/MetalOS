@@ -11,11 +11,15 @@ set(KERNEL_C_SOURCES
     src/memory.c
     src/pci.c
     src/timer.c
+    src/smp.c
+    src/apic.c
+    src/spinlock.c
 )
 
 set(KERNEL_ASM_SOURCES
     src/gdt_flush.asm
     src/interrupts_asm.asm
+    src/ap_trampoline.asm
 )
 
 # Kernel-specific C compiler flags

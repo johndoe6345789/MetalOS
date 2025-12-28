@@ -2,8 +2,8 @@
  * MetalOS Kernel - Main Entry Point
  * 
  * EXTREME MINIMAL kernel - only what's needed for QT6 Hello World.
- * No scheduler, no process management, no filesystem, no nothing.
- * Just: boot -> init GPU -> init input -> run app.
+ * Now with basic multicore support for better performance!
+ * Just: boot -> init hardware (all cores) -> run app.
  */
 
 #include "kernel/kernel.h"
@@ -12,13 +12,15 @@
 #include "kernel/memory.h"
 #include "kernel/pci.h"
 #include "kernel/timer.h"
+#include "kernel/smp.h"
 
 /*
  * Kernel main entry point
  * Called by bootloader with boot information
  * 
- * This is it. The entire OS. No scheduler, no processes, no filesystem.
- * Just set up hardware and jump to the QT6 app.
+ * Initializes all hardware including multicore support.
+ * Simple design: all cores initialized but only BSP runs app.
+ * Future: could distribute work across cores for better performance.
  */
 void kernel_main(BootInfo* boot_info) {
     // Initialize GDT (Global Descriptor Table)
@@ -45,6 +47,13 @@ void kernel_main(BootInfo* boot_info) {
     
     // Initialize PCI bus
     pci_init();
+    
+    // Initialize SMP (Symmetric Multi-Processing)
+    // This will detect and start all available CPU cores
+    smp_init();
+    
+    // Print CPU info (if we had console, would show core count here)
+    // For now, just continue - all cores are initialized
     
     // TODO: Set up minimal page tables (identity mapped or simple offset)
     
@@ -74,8 +83,8 @@ void kernel_main(BootInfo* boot_info) {
 }
 
 /*
- * That's the entire kernel. No scheduler. No processes. No filesystem.
- * Just boot, initialize hardware, run app.
+ * Simple multicore kernel. All cores initialized but only BSP runs app.
+ * All cores available for future parallel processing.
  * 
- * Total kernel size target: < 100 KB
+ * Total kernel size target: < 150 KB (with multicore support)
  */

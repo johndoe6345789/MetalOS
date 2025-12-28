@@ -181,3 +181,115 @@ nm kernel/metalos.bin | grep -E "(init|handler)"
 - [ ] Add GPU driver initialization
 - [ ] Set up page tables for virtual memory
 - [ ] Add input device drivers
+
+## SMP (Multicore) API
+
+### Core Detection and Management
+
+```c
+// Initialize SMP and start all CPU cores
+void smp_init(void);
+
+// Get number of online CPUs
+uint8_t smp_get_cpu_count(void);
+
+// Get current CPU ID (0 = BSP, 1+ = APs)
+uint8_t smp_get_current_cpu(void);
+
+// Check if multicore is enabled
+bool smp_is_enabled(void);
+
+// Get CPU information
+cpu_info_t* smp_get_cpu_info(uint8_t cpu_id);
+```
+
+### APIC (Interrupt Controller)
+
+```c
+// Check if APIC is available
+bool apic_is_available(void);
+
+// Initialize Local APIC
+void apic_init(void);
+
+// Get Local APIC ID
+uint8_t apic_get_id(void);
+
+// Send End of Interrupt
+void apic_send_eoi(void);
+
+// Send Inter-Processor Interrupt
+void apic_send_ipi(uint8_t dest_apic_id, uint8_t vector, uint32_t delivery_mode);
+```
+
+### Spinlocks
+
+```c
+spinlock_t lock;
+
+// Initialize spinlock
+void spinlock_init(spinlock_t* lock);
+
+// Acquire lock (blocking)
+void spinlock_acquire(spinlock_t* lock);
+
+// Try to acquire (non-blocking)
+bool spinlock_try_acquire(spinlock_t* lock);
+
+// Release lock
+void spinlock_release(spinlock_t* lock);
+
+// Check if locked
+bool spinlock_is_locked(spinlock_t* lock);
+```
+
+### Example: Protected Critical Section
+
+```c
+// Initialize lock once
+static spinlock_t my_lock;
+spinlock_init(&my_lock);
+
+// Use in critical section
+void update_shared_data(void) {
+    spinlock_acquire(&my_lock);
+    
+    // Protected code here
+    // Safe across all CPUs
+    
+    spinlock_release(&my_lock);
+}
+```
+
+### Multicore-Aware Initialization
+
+```c
+void kernel_main(BootInfo* boot_info) {
+    gdt_init();
+    idt_init();
+    pmm_init(boot_info);
+    heap_init(...);
+    timer_init(1000);
+    pci_init();
+    
+    // Start all CPU cores
+    smp_init();
+    
+    uint8_t num_cpus = smp_get_cpu_count();
+    // num_cpus = 12 on 6-core/12-thread system
+    
+    // Continue with single-threaded initialization
+    // (APs are idle, waiting for work)
+}
+```
+
+## Multicore Support
+
+MetalOS now supports multicore processors with up to 16 logical CPUs. Features:
+- Automatic CPU detection
+- APIC-based interrupt handling  
+- Spinlocks for synchronization
+- Per-CPU data structures
+- Falls back to single-core if APIC unavailable
+
+See [SMP_MULTICORE.md](SMP_MULTICORE.md) for detailed documentation.

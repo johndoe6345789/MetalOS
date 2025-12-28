@@ -2,11 +2,13 @@
  * MetalOS Kernel - Interrupt Handling
  * 
  * Minimal IDT and interrupt handlers
- * Only essential interrupts for QT6 app
+ * Supports both PIC (legacy) and APIC (multicore) modes
  */
 
 #include "kernel/interrupts.h"
 #include "kernel/timer.h"
+#include "kernel/smp.h"
+#include "kernel/apic.h"
 
 // I/O port access functions
 static inline void outb(uint16_t port, uint8_t value) {
@@ -163,13 +165,20 @@ void interrupt_handler(registers_t* regs) {
     
     // TODO: Handle other interrupts (keyboard, etc.)
     
-    // Send EOI (End of Interrupt) to PIC if this was an IRQ
+    // Send EOI (End of Interrupt)
     if (regs->int_no >= 32 && regs->int_no < 48) {
-        if (regs->int_no >= 40) {
-            // Slave PIC
-            outb(PIC2_COMMAND, 0x20);
+        // Check if we're using APIC or PIC
+        if (smp_is_enabled() && apic_is_available()) {
+            // Use APIC EOI
+            apic_send_eoi();
+        } else {
+            // Use legacy PIC EOI
+            if (regs->int_no >= 40) {
+                // Slave PIC
+                outb(PIC2_COMMAND, 0x20);
+            }
+            // Master PIC
+            outb(PIC1_COMMAND, 0x20);
         }
-        // Master PIC
-        outb(PIC1_COMMAND, 0x20);
     }
 }
