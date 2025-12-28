@@ -327,10 +327,10 @@ MetalOS is **the absolute minimum operating system** needed to boot QT6 Hello Wo
 4. **Dynamic Linking**: ❌ Not needed
    - Static link everything for simplicity
 
-5. **SMP**: ⚠️ Basic support implemented
-   - Basic multicore/SMP framework in place for learning
-   - Single core is sufficient for hello world
-   - Can be simplified later if needed
+5. **SMP**: ✅ Included
+   - Multicore/SMP support implemented
+   - Enables better performance and learning opportunities
+   - Not strictly necessary but adds value
 
 6. **ACPI**: ✅ Implemented
    - RSDP discovery in bootloader
