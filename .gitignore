@@ -19,6 +19,7 @@
 build/
 bootloader/build/
 kernel/build/
+_codeql_build_dir/
 
 # CMake
 CMakeCache.txt
