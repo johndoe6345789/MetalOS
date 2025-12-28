@@ -152,9 +152,19 @@ Closes #42
 Every PR should be tested in QEMU:
 
 ```bash
-make clean
-make all
-make qemu
+mkdir build && cd build
+cmake ..
+cmake --build .
+cmake --build . --target qemu
+```
+
+Or if you already have a build directory:
+
+```bash
+cd build
+cmake --build . --target clean
+cmake --build .
+cmake --build . --target qemu
 ```
 
 Verify:

@@ -1,21 +1,15 @@
 # MetalOS Build Systems Guide
 
-MetalOS supports multiple build systems to accommodate different developer preferences and workflows.
+MetalOS uses **CMake** as its primary build system, which can be used with different build backends for different workflows.
 
 ## Quick Start
 
-### Using Make (Traditional)
-```bash
-make all      # Build everything
-make qemu     # Test in QEMU
-make clean    # Clean build artifacts
-```
-
-### Using CMake + Make
+### Using CMake (Default)
 ```bash
 mkdir build && cd build
 cmake ..
 cmake --build .
+cmake --build . --target qemu  # Test in QEMU
 ```
 
 ### Using CMake + Ninja (Fastest)
@@ -23,6 +17,7 @@ cmake --build .
 mkdir build && cd build
 cmake -G Ninja ..
 ninja
+ninja qemu  # Test in QEMU
 ```
 
 ### Using Conan + CMake
@@ -35,89 +30,38 @@ cmake --build .
 
 ## Build System Comparison
 
-| Build System | Speed | Features | Best For |
-|--------------|-------|----------|----------|
-| **Make** | Medium | Simple, traditional | Quick builds, CI/CD |
-| **CMake** | Medium | Cross-platform, modern | Complex projects, IDEs |
+| Build Backend | Speed | Features | Best For |
+|---------------|-------|----------|----------|
+| **Make** (default) | Medium | Cross-platform, standard | General use, CI/CD |
 | **Ninja** | Fast | Parallel builds | Development, large projects |
 | **Conan** | Medium | Dependency management | Projects with external deps |
 
 ## Detailed Usage
 
-### 1. Make (Traditional Build System)
+### 1. CMake (Primary Build System)
 
-The original build system using GNU Make.
-
-#### Build Commands
-```bash
-# Build all components
-make all
-
-# Build individually
-make bootloader
-make kernel
-make test
-
-# Create bootable image
-make image
-
-# Run in QEMU
-make qemu                    # Headless mode
-make qemu QEMU_DISPLAY=gtk   # With GUI
-make qemu-debug              # With debug output
-make qemu-gdb                # With GDB server
-
-# Clean
-make clean       # Clean build artifacts
-make distclean   # Deep clean
-```
-
-#### Advantages
-- ✅ Simple and straightforward
-- ✅ No additional dependencies
-- ✅ Works on all Unix-like systems
-- ✅ Easy to understand and modify
-
-#### Disadvantages
-- ❌ Not cross-platform (Windows requires special setup)
-- ❌ Can be slower for large projects
-- ❌ Limited dependency tracking
-
----
-
-### 2. CMake (Modern Build Generator)
-
-CMake generates build files for various build systems (Make, Ninja, Visual Studio, etc.).
+CMake is the primary build system for MetalOS, providing cross-platform support and modern features.
 
 #### Build Commands
 ```bash
-# Configure (generates build files)
+# Configure and build
 mkdir build && cd build
 cmake ..
-
-# Configure with specific generator
-cmake -G "Unix Makefiles" ..
-cmake -G Ninja ..
-cmake -G "Visual Studio 17 2022" ..  # Windows
-
-# Configure with options
-cmake -DBUILD_BOOTLOADER=ON -DBUILD_KERNEL=ON -DBUILD_TESTS=ON ..
-cmake -DCMAKE_BUILD_TYPE=Debug ..
-cmake -DCMAKE_BUILD_TYPE=Release ..
-
-# Build
 cmake --build .
-cmake --build . --parallel 8  # Use 8 parallel jobs
 
 # Build specific targets
 cmake --build . --target bootloader_efi
 cmake --build . --target kernel_bin
 cmake --build . --target image
 
-# Run custom targets
-cmake --build . --target qemu
-cmake --build . --target qemu-debug
-cmake --build . --target qemu-gdb
+# Create bootable image
+cmake --build . --target image
+
+# Run in QEMU
+cmake --build . --target qemu          # Headless mode
+cmake --build . --target qemu-debug    # With debug output
+cmake --build . --target qemu-gdb      # With GDB server
+cmake --build . --target qemu-uefi-test # Test UEFI setup
 
 # Test
 ctest
@@ -132,6 +76,23 @@ cmake --install . --prefix /path/to/install
 cmake --build . --target clean
 rm -rf build  # Complete clean
 ```
+
+#### Advantages
+- ✅ Cross-platform (Windows, Linux, macOS)
+- ✅ IDE integration (CLion, VSCode, Visual Studio)
+- ✅ Modern dependency management
+- ✅ Better parallel build support
+- ✅ Generates compile_commands.json for IDEs
+
+#### Disadvantages
+- ❌ Requires cmake installation
+- ❌ Slightly more complex setup
+
+---
+
+### 2. Ninja (Fast Build Backend)
+
+Ninja is a fast build backend that can be used with CMake for faster incremental builds.
 
 #### Advantages
 - ✅ Cross-platform (Windows, Linux, macOS)

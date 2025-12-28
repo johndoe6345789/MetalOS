@@ -53,9 +53,9 @@ endif()
 # Custom target to create bootable image
 find_program(MFORMAT mformat)
 find_program(MCOPY mcopy)
-find_program(MDD mdd)
+find_program(MMD mmd)
 
-if(MFORMAT AND MCOPY)
+if(MFORMAT AND MCOPY AND MMD)
     add_custom_target(image
         COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/build/iso/EFI/BOOT
         COMMAND ${CMAKE_COMMAND} -E copy 
@@ -65,10 +65,10 @@ if(MFORMAT AND MCOPY)
             ${CMAKE_BINARY_DIR}/kernel/metalos.bin 
             ${CMAKE_BINARY_DIR}/build/iso/
         COMMAND ${CMAKE_COMMAND} -E echo "Creating disk image..."
-        COMMAND dd if=/dev/zero of=${CMAKE_BINARY_DIR}/build/metalos.img bs=1M count=64 2>/dev/null
+        COMMAND dd if=/dev/zero of=${CMAKE_BINARY_DIR}/build/metalos.img bs=1M count=64
         COMMAND ${MFORMAT} -i ${CMAKE_BINARY_DIR}/build/metalos.img -F -v METALOS ::
-        COMMAND ${MDD} -i ${CMAKE_BINARY_DIR}/build/metalos.img ::/EFI
-        COMMAND ${MDD} -i ${CMAKE_BINARY_DIR}/build/metalos.img ::/EFI/BOOT
+        COMMAND ${MMD} -i ${CMAKE_BINARY_DIR}/build/metalos.img ::/EFI
+        COMMAND ${MMD} -i ${CMAKE_BINARY_DIR}/build/metalos.img ::/EFI/BOOT
         COMMAND ${MCOPY} -i ${CMAKE_BINARY_DIR}/build/metalos.img 
             ${CMAKE_BINARY_DIR}/build/iso/EFI/BOOT/bootx64.efi ::/EFI/BOOT/
         COMMAND ${MCOPY} -i ${CMAKE_BINARY_DIR}/build/metalos.img 
@@ -141,6 +141,20 @@ if(QEMU)
                 -s -S
             DEPENDS image
             COMMENT "Running MetalOS in QEMU with GDB server (port 1234)"
+            VERBATIM
+        )
+        
+        add_custom_target(qemu-uefi-test
+            COMMAND ${CMAKE_COMMAND} -E echo "Testing QEMU UEFI boot (no OS image)..."
+            COMMAND ${CMAKE_COMMAND} -E echo "Using OVMF firmware: ${OVMF_FIRMWARE}"
+            COMMAND ${CMAKE_COMMAND} -E echo "This will boot to UEFI shell in nographic mode."
+            COMMAND ${CMAKE_COMMAND} -E echo "You should see UEFI boot messages. Press Ctrl-A then X to exit QEMU."
+            COMMAND ${QEMU}
+                -drive if=pflash,format=raw,readonly=on,file=${OVMF_FIRMWARE}
+                -m 512M
+                -nographic
+                -net none
+            COMMENT "Testing QEMU UEFI setup without OS image"
             VERBATIM
         )
     else()

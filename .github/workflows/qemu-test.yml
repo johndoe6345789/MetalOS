@@ -25,6 +25,7 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y \
           build-essential \
+          cmake \
           nasm \
           qemu-system-x86 \
           ovmf \
@@ -32,19 +33,21 @@ jobs:
           xorriso \
           imagemagick
     
-    - name: Build bootloader
+    - name: Configure CMake
       run: |
-        cd bootloader
-        make
+        mkdir -p build
+        cd build
+        cmake ..
     
-    - name: Build kernel
+    - name: Build bootloader and kernel
       run: |
-        cd kernel
-        make
+        cd build
+        cmake --build .
     
     - name: Create bootable image
       run: |
-        make image
+        cd build
+        cmake --build . --target image
     
     - name: Start QEMU and capture screenshot
       run: |
@@ -56,19 +59,22 @@ jobs:
         XVFB_PID=$!
         sleep 2
         
-        # Verify disk image exists (created by 'make image')
-        if [ ! -f build/metalos.img ]; then
-          echo "Error: build/metalos.img not found!"
+        # Verify disk image exists (created by cmake build)
+        if [ ! -f build/build/metalos.img ]; then
+          echo "Error: build/build/metalos.img not found!"
           exit 1
         fi
+        
+        # Create directory for logs
+        mkdir -p build/logs
         
         # Start QEMU in the background with a timeout
         timeout 30s qemu-system-x86_64 \
           -bios /usr/share/OVMF/OVMF_CODE.fd \
-          -drive format=raw,file=build/metalos.img \
+          -drive format=raw,file=build/build/metalos.img \
           -m 512M \
           -display gtk \
-          -serial file:build/serial.log \
+          -serial file:build/logs/serial.log \
           -no-reboot &
         QEMU_PID=$!
         
@@ -77,7 +83,7 @@ jobs:
         
         # Take screenshot using ImageMagick (optional - don't fail if this doesn't work)
         # Using subshell to prevent 'set -e' from affecting this optional step
-        { import -window root build/qemu-screenshot.png; } || echo "Screenshot capture failed (non-fatal)"
+        { import -window root build/logs/qemu-screenshot.png; } || echo "Screenshot capture failed (non-fatal)"
         
         # Gracefully stop QEMU (don't fail if already stopped)
         kill $QEMU_PID 2>/dev/null || true
@@ -91,9 +97,9 @@ jobs:
     - name: Show serial output
       if: always()
       run: |
-        if [ -f build/serial.log ]; then
+        if [ -f build/logs/serial.log ]; then
           echo "=== QEMU Serial Output ==="
-          cat build/serial.log
+          cat build/logs/serial.log
         else
           echo "No serial output captured"
         fi
@@ -103,7 +109,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: qemu-screenshot
-        path: build/qemu-screenshot.png
+        path: build/logs/qemu-screenshot.png
         if-no-files-found: warn
     
     - name: Upload serial log
@@ -111,7 +117,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: serial-log
-        path: build/serial.log
+        path: build/logs/serial.log
         if-no-files-found: warn
     
     - name: Upload built disk image
@@ -119,5 +125,5 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: metalos-disk-image
-        path: build/metalos.img
+        path: build/build/metalos.img
         if-no-files-found: warn
