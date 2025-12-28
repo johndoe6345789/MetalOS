@@ -1,215 +1,133 @@
 # MetalOS
 
-**The most minimal OS possible that runs QT6 Hello World.**
+- Might use Linux kernel only as inspiration for driver code, can be git cloned.
+- Some changes might be required to QT6 - We can git clone this.
+- Mostly ignoring other peoples OS work.
+- One OS launches this One Full Screen QT6 app. No command line, no cruft.
 
-Not Linux. Not BSD. Not Windows. Just enough code to boot, initialize GPU, and run one app.
+Key Design Decisions:
 
-## Extreme Minimalism
+✅ No command line/shell - boots directly to QT6 app
+✅ No file system - app embedded in boot image
+✅ Single application only
+✅ Static linking for simplicity
+✅ Minimal implementation philosophy
+✅ Creative freedom for OS components, precision for drivers
 
-MetalOS is an exercise in **absolute minimalism**:
+Phase 1: Project Foundation ✅ COMPLETE
 
-- ❌ **No scheduler** - one app = always running
-- ❌ **No process management** - one process only
-- ❌ **No file system** - app embedded in boot image
-- ❌ **No networking** - not needed
-- ❌ **No shell/command line** - boot directly to app
-- ❌ **No security** - trust everything
-- ❌ **No multi-core** - one CPU core
-- ❌ **No dynamic linking** - static link everything
+Review project requirements
 
-**If it doesn't help QT6 Hello World run, it doesn't exist.**
+Create project structure and documentation
 
-Target: **< 200 KB OS code** (excluding QT6 itself)
+Define architecture (minimal, single-app boot)
 
-## Project Status
+Create UEFI bootloader skeleton
 
-🚧 **In Development** - Phase 1 Complete (Foundation)
+Set up build system (Makefiles)
 
-Currently: Project structure, documentation, and skeleton code in place.
+Create basic kernel entry point with framebuffer console
 
-## What is MetalOS?
+Document development environment setup
 
-MetalOS is **the smallest possible operating system** that can boot QT6 Hello World on specific hardware.
+Create QT6 Hello World application template
 
-### Philosophy
+Clarify design: no shell, boot directly to app
 
-Every feature must answer: **"Does this help run QT6 Hello World?"**
+Add comprehensive status documentation
 
-If no → it doesn't exist.
+Phase 2: UEFI Bootloader (Next)
 
-### Aggressive Minimalism
+Implement UEFI protocol interfaces
 
-- **Bootloader**: < 10 KB (just load kernel and jump)
-- **Kernel**: < 100 KB (memory, interrupts, drivers)
-- **GPU Driver**: < 50 KB (minimal display init)
-- **Input Drivers**: < 20 KB (keyboard + mouse only)
-- **Total OS**: ~200 KB
+Graphics initialization (GOP)
 
-Compare to Linux kernel: ~30 MB. We're **150x smaller** by doing only one thing.
+Kernel loading from disk
 
-### Key Features
+Memory map retrieval
 
-- ✅ **UEFI Native**: Modern boot via UEFI (no legacy BIOS)
-- ✅ **AMD64 Architecture**: 64-bit x86 processor support
-- ✅ **Radeon RX 6600 GPU**: Hardware-specific graphics support
-- ✅ **QT6 Framework**: Full QT6 widget support
-- ✅ **Minimal Design**: Only what's necessary, nothing more
+Exit boot services
 
-### What's Included
+Jump to kernel with boot info
+Phase 3: Core Kernel Components
 
-- **UEFI Bootloader**: Initializes hardware and loads kernel
-- **Minimal Kernel**: Memory management, scheduling, interrupts
-- **GPU Driver**: Radeon RX 6600 specific (inspired by Linux amdgpu)
-- **HAL**: Hardware abstraction for PCI, input devices
-- **User Space**: Minimal C++ runtime for applications
-- **QT6 Port**: QT6 framework ported to MetalOS
-- **Hello World App**: Full-screen QT6 demonstration application
+GDT/IDT setup
 
-### What's NOT Included
+Interrupt handling
 
-- ❌ Multi-user support
-- ❌ Command line / shell
-- ❌ Networking stack
-- ❌ File systems (app embedded in boot image)
-- ❌ POSIX compatibility
-- ❌ Security features (this is a demo/learning project)
-- ❌ Support for other hardware
-- ❌ Multiple applications (single app only)
+Memory management (physical/virtual)
 
-## Quick Start
+Simple scheduler (single process)
 
-### Prerequisites
+Basic framebuffer console improvements
+Phase 4: Hardware Support
 
-```bash
-# Ubuntu/Debian
-sudo apt-get install build-essential nasm qemu-system-x86 ovmf
+PCI device enumeration
 
-# macOS
-brew install nasm qemu
-```
+Radeon RX 6600 GPU driver (precise implementation)
 
-You'll also need a cross-compiler. See [docs/BUILD.md](docs/BUILD.md) for details.
+Framebuffer management
 
-### Building
+USB input (keyboard/mouse)
+Phase 5: System Call Interface
 
-```bash
-# Clone the repository
-git clone https://github.com/johndoe6345789/MetalOS.git
-cd MetalOS
+Minimal syscall mechanism
 
-# Build everything
-make all
+Essential syscalls for QT6
 
-# Create bootable image
-make image
+User/kernel mode transitions
+Phase 6: User Space & Application
 
-# Test in QEMU
-make qemu
-```
+ELF loader (static only)
 
-### Testing on Hardware
+C++ runtime support
 
-⚠️ **WARNING**: This is experimental software. Test on non-production hardware only.
+Load QT6 hello world directly (no init)
 
-See [docs/BUILD.md](docs/BUILD.md) for instructions on creating a bootable USB drive.
+Static-linked application
+Phase 7: QT6 Port
 
-## Documentation
+Identify and port QT6 dependencies
 
-- **[MINIMALISM.md](docs/MINIMALISM.md)** - ⭐ **START HERE** - Philosophy and what we cut
-- **[ARCHITECTURE.md](docs/ARCHITECTURE.md)** - System design (minimal version)
-- **[ROADMAP.md](docs/ROADMAP.md)** - Development phases
-- **[BUILD.md](docs/BUILD.md)** - Build instructions
-- **[DEVELOPMENT.md](docs/DEVELOPMENT.md)** - Development workflow
-- **[COMPONENTS.md](docs/COMPONENTS.md)** - Component checklist
-- **[STATUS.md](docs/STATUS.md)** - Current implementation status
+Create MetalOS QPA (Platform Abstraction) plugin
 
-## Project Structure
+Framebuffer graphics backend
 
-```
-MetalOS/
-├── bootloader/        # UEFI bootloader
-├── kernel/           # MetalOS kernel
-├── userspace/        # User space runtime and applications
-│   ├── runtime/     # C++ runtime
-│   ├── init/        # Init process
-│   └── apps/        # QT6 hello world application
-├── docs/            # Documentation
-└── scripts/         # Build scripts
-```
+Input event integration
 
-## Development Phases
+Build QT6 for MetalOS
+Phase 8: Integration & Testing
 
-- [x] **Phase 1**: Foundation (Complete)
-- [ ] **Phase 2**: UEFI Bootloader
-- [ ] **Phase 3**: Minimal Kernel
-- [ ] **Phase 4**: Hardware Abstraction Layer
-- [ ] **Phase 5**: System Call Interface
-- [ ] **Phase 6**: User Space Runtime
-- [ ] **Phase 7**: QT6 Port
-- [ ] **Phase 8**: Integration & Polish
+Build complete bootable image
 
-See [docs/ROADMAP.md](docs/ROADMAP.md) for detailed breakdown.
+Full-screen rendering validation
 
-## Why?
+Philosophy: If it doesn't help QT6 Hello World, it doesn't exist.
 
-**Minimalism**: How small can an OS be and still run GUI apps?
 
-**Learning**: Building an OS from scratch is the ultimate systems programming challenge.
+What We Cut (see docs/MINIMALISM.md):
 
-**Proof of Concept**: Modern frameworks like QT6 can run on tiny custom OSes.
+❌ Scheduler (one app = always running)
+❌ Process management (one process only)
+❌ File system (app embedded)
+❌ Networking (not needed)
+❌ Shell/CLI (boot directly to app)
+❌ Security (trust everything)
+❌ Multi-core (one CPU)
+❌ Dynamic linking (static only)
+❌ Virtual memory complexity (identity map)
+❌ ACPI (try without it)
+What We Keep (absolute minimum):
 
-**Fun**: Because we can.
+✅ Memory allocator (bump allocator)
+✅ ~5 interrupt handlers (timer, keyboard, mouse, GPU)
+✅ GPU driver (framebuffer only, ~50 KB)
+✅ Input drivers (PS/2 first, USB fallback, ~20 KB)
+✅ PCI scan (just find our GPU)
+✅ ~5 syscalls (write, mmap, ioctl, poll, exit)
 
-## Technology Stack
+Input handling verification
 
-- **Language**: C for kernel, C++ for applications
-- **Boot**: UEFI
-- **Architecture**: AMD64 (x86-64)
-- **Graphics**: Direct framebuffer + Radeon RX 6600
-- **GUI**: QT6 (Core, Gui, Widgets)
-- **Build**: GNU Make, GCC cross-compiler
+Test on QEMU
 
-## Inspiration
-
-- **Linux Kernel**: For driver implementations (especially GPU)
-- **SerenityOS**: For clean, minimal OS design
-- **TempleOS**: For single-purpose OS philosophy
-- **Redox OS**: For Rust-based OS architecture (though we use C/C++)
-
-## Contributing
-
-**Golden Rule**: If it doesn't help QT6 Hello World, don't add it.
-
-Contributions welcome for:
-- Simplifying existing code (make it smaller!)
-- Bug fixes
-- GPU driver work (hardest part)
-- QT6 port work
-- Documentation
-
-Not welcome:
-- Adding features "for completeness"
-- POSIX compatibility
-- Supporting other hardware
-- Generalizing anything
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) and [docs/MINIMALISM.md](docs/MINIMALISM.md).
-
-## License
-
-See [LICENSE](LICENSE) file for details.
-
-## Disclaimer
-
-⚠️ **This is not production software!** MetalOS is a learning/demonstration project. It lacks security features, error handling, and hardware support expected in production OSes.
-
-Do not use for anything important!
-
-## Contact
-
-- **Issues**: [GitHub Issues](https://github.com/johndoe6345789/MetalOS/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/johndoe6345789/MetalOS/discussions)
-
----
-
-**MetalOS** - A minimal OS for maximal learning.
+Test on real hardware (AMD64 + RX 6600)
