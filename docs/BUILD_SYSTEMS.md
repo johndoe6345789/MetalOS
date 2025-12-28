@@ -22,9 +22,18 @@ ninja qemu  # Test in QEMU
 
 ### Using Conan + CMake
 ```bash
+# First time: install Conan and setup profile
+pip3 install conan
+conan profile detect --force
+
+# Install dependencies (generates toolchain files)
+conan install . --build=missing
+
+# Configure with Conan toolchain
 mkdir build && cd build
-conan install .. --build=missing
-cmake .. -DCMAKE_TOOLCHAIN_FILE=conan_toolchain.cmake
+cmake .. -DCMAKE_TOOLCHAIN_FILE=../build/Release/generators/conan_toolchain.cmake
+
+# Build
 cmake --build .
 ```
 
@@ -160,18 +169,16 @@ conan profile detect --force
 
 #### Build Commands
 ```bash
-# Create build directory
-mkdir build && cd build
-
-# Install dependencies (currently none, but ready for future)
-conan install .. --build=missing
+# Install dependencies (generates toolchain in build/Release/generators/)
+conan install . --build=missing
 
 # Alternative: Install with specific settings
-conan install .. --build=missing -s build_type=Debug
-conan install .. --build=missing -s build_type=Release
+conan install . --build=missing -s build_type=Debug
+conan install . --build=missing -s build_type=Release
 
-# Configure with Conan-generated toolchain
-cmake .. -DCMAKE_TOOLCHAIN_FILE=conan_toolchain.cmake
+# Create build directory and configure with Conan-generated toolchain
+mkdir build && cd build
+cmake .. -DCMAKE_TOOLCHAIN_FILE=../build/Release/generators/conan_toolchain.cmake
 
 # Build
 cmake --build .

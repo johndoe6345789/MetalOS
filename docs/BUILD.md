@@ -36,6 +36,7 @@ cmake --build . --target qemu
 
 The Docker image includes:
 - **Build tools**: GCC, NASM, CMake, Meson
+- **Conan**: Package manager for C/C++ dependencies
 - **QEMU**: For testing with UEFI firmware
 - **OVMF**: UEFI firmware for QEMU
 - **Dependency management**: Scripts to download AMD firmware, Mesa RADV, QT6
@@ -80,12 +81,21 @@ If you prefer to build natively without Docker:
    - UEFI firmware for QEMU
    - Required for UEFI boot testing
 
+7. **Conan** (for dependency management)
+   - Package manager for C/C++ projects
+   - Version 2.0 or later
+   - Optional but recommended
+
 ### Installing Prerequisites on Ubuntu/Debian
 
 ```bash
 # Install basic build tools
 sudo apt-get update
-sudo apt-get install -y build-essential nasm qemu-system-x86 ovmf mtools xorriso
+sudo apt-get install -y build-essential nasm qemu-system-x86 ovmf mtools xorriso cmake python3 python3-pip
+
+# Install Conan (optional but recommended)
+pip3 install conan
+conan profile detect --force
 
 # Install cross-compiler prerequisites
 sudo apt-get install -y libgmp-dev libmpfr-dev libmpc-dev texinfo
@@ -97,13 +107,21 @@ sudo apt-get install -y libgmp-dev libmpfr-dev libmpc-dev texinfo
 ### Installing Prerequisites on Arch Linux
 
 ```bash
-sudo pacman -S base-devel nasm qemu-full edk2-ovmf mtools xorriso
+sudo pacman -S base-devel nasm qemu-full edk2-ovmf mtools xorriso cmake python python-pip
+
+# Install Conan (optional but recommended)
+pip install conan
+conan profile detect --force
 ```
 
 ### Installing Prerequisites on macOS
 
 ```bash
-brew install nasm qemu x86_64-elf-gcc x86_64-elf-binutils
+brew install nasm qemu x86_64-elf-gcc x86_64-elf-binutils cmake python3
+
+# Install Conan (optional but recommended)
+pip3 install conan
+conan profile detect --force
 ```
 
 ## Building the Bootloader

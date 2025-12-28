@@ -32,7 +32,7 @@ RUN apt-get update && apt-get install -y \
     mtools \
     xorriso \
     dosfstools \
-    # Python for build scripts
+    # Python for build scripts and Conan
     python3 \
     python3-pip \
     # Additional utilities
@@ -40,6 +40,12 @@ RUN apt-get update && apt-get install -y \
     less \
     file \
     && rm -rf /var/lib/apt/lists/*
+
+# Install Conan package manager
+RUN pip3 install --no-cache-dir conan
+
+# Detect and configure Conan profile
+RUN conan profile detect --force
 
 # Create directory structure for dependencies
 RUN mkdir -p /metalos/deps/firmware \

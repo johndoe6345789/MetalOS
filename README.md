@@ -90,8 +90,15 @@ ninja qemu
 ### Conan (With Package Management)
 
 ```bash
+# First time: install Conan and setup profile
+pip3 install conan
+conan profile detect --force
+
+# Install dependencies and generate toolchain
+conan install . --build=missing
+
+# Configure and build
 mkdir build && cd build
-conan install .. --build=missing
 cmake .. -DCMAKE_TOOLCHAIN_FILE=../build/Release/generators/conan_toolchain.cmake -G Ninja
 ninja
 ```
