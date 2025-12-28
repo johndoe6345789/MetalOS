@@ -1,133 +1,86 @@
 # MetalOS
 
-- Might use Linux kernel only as inspiration for driver code, can be git cloned.
-- Some changes might be required to QT6 - We can git clone this.
-- Mostly ignoring other peoples OS work.
-- One OS launches this One Full Screen QT6 app. No command line, no cruft.
+**An extreme minimalism OS - One app, one purpose, zero cruft.**
 
-Key Design Decisions:
+MetalOS boots directly to a single full-screen QT6 application. No shell, no filesystem, no complexity.
 
-✅ No command line/shell - boots directly to QT6 app
-✅ No file system - app embedded in boot image
-✅ Single application only
-✅ Static linking for simplicity
-✅ Minimal implementation philosophy
-✅ Creative freedom for OS components, precision for drivers
+## Philosophy
 
-Phase 1: Project Foundation ✅ COMPLETE
+> *"If it doesn't help QT6 Hello World, it doesn't exist."*
 
-Review project requirements
+This OS exists solely to run **one QT6 application** on **AMD64 + Radeon RX 6600** hardware. Everything else is cut.
 
-Create project structure and documentation
+## Design Principles
 
-Define architecture (minimal, single-app boot)
+✅ **Boot directly to app** - No command line or shell  
+✅ **Single application** - One process, always running  
+✅ **No filesystem** - App embedded in boot image  
+✅ **Static linking only** - Maximum simplicity  
+✅ **Creative freedom** - Not bound by POSIX or tradition  
+✅ **Precise drivers** - Hardware code follows specs exactly
 
-Create UEFI bootloader skeleton
+## What We Cut
 
-Set up build system (Makefiles)
+See [docs/MINIMALISM.md](docs/MINIMALISM.md) for full philosophy.
 
-Create basic kernel entry point with framebuffer console
+❌ Scheduler ❌ Process management ❌ Filesystem  
+❌ Networking ❌ Security ❌ Multi-core  
+❌ Dynamic linking ❌ ACPI ❌ Virtual memory complexity
 
-Document development environment setup
+## What We Keep (Absolute Minimum)
 
-Create QT6 Hello World application template
-
-Clarify design: no shell, boot directly to app
-
-Add comprehensive status documentation
-
-Phase 2: UEFI Bootloader (Next)
-
-Implement UEFI protocol interfaces
-
-Graphics initialization (GOP)
-
-Kernel loading from disk
-
-Memory map retrieval
-
-Exit boot services
-
-Jump to kernel with boot info
-Phase 3: Core Kernel Components
-
-GDT/IDT setup
-
-Interrupt handling
-
-Memory management (physical/virtual)
-
-Simple scheduler (single process)
-
-Basic framebuffer console improvements
-Phase 4: Hardware Support
-
-PCI device enumeration
-
-Radeon RX 6600 GPU driver (precise implementation)
-
-Framebuffer management
-
-USB input (keyboard/mouse)
-Phase 5: System Call Interface
-
-Minimal syscall mechanism
-
-Essential syscalls for QT6
-
-User/kernel mode transitions
-Phase 6: User Space & Application
-
-ELF loader (static only)
-
-C++ runtime support
-
-Load QT6 hello world directly (no init)
-
-Static-linked application
-Phase 7: QT6 Port
-
-Identify and port QT6 dependencies
-
-Create MetalOS QPA (Platform Abstraction) plugin
-
-Framebuffer graphics backend
-
-Input event integration
-
-Build QT6 for MetalOS
-Phase 8: Integration & Testing
-
-Build complete bootable image
-
-Full-screen rendering validation
-
-Philosophy: If it doesn't help QT6 Hello World, it doesn't exist.
-
-
-What We Cut (see docs/MINIMALISM.md):
-
-❌ Scheduler (one app = always running)
-❌ Process management (one process only)
-❌ File system (app embedded)
-❌ Networking (not needed)
-❌ Shell/CLI (boot directly to app)
-❌ Security (trust everything)
-❌ Multi-core (one CPU)
-❌ Dynamic linking (static only)
-❌ Virtual memory complexity (identity map)
-❌ ACPI (try without it)
-What We Keep (absolute minimum):
-
-✅ Memory allocator (bump allocator)
-✅ ~5 interrupt handlers (timer, keyboard, mouse, GPU)
-✅ GPU driver (framebuffer only, ~50 KB)
-✅ Input drivers (PS/2 first, USB fallback, ~20 KB)
-✅ PCI scan (just find our GPU)
+✅ Memory allocator (bump allocator)  
+✅ ~5 interrupt handlers (timer, keyboard, mouse, GPU)  
+✅ GPU driver (framebuffer only, ~50 KB)  
+✅ Input drivers (PS/2 first, USB fallback, ~20 KB)  
+✅ PCI scan (just find our GPU)  
 ✅ ~5 syscalls (write, mmap, ioctl, poll, exit)
 
-Input handling verification
+**Target OS Size**: ~200 KB (excluding QT6)
 
-Test on QEMU
+## Development Phases
 
-Test on real hardware (AMD64 + RX 6600)
+**Phase 1: Project Foundation** ✅ COMPLETE  
+**Phase 2: UEFI Bootloader** (Next)  
+**Phase 3: Core Kernel Components**  
+**Phase 4: Hardware Support**  
+**Phase 5: System Call Interface**  
+**Phase 6: User Space & Application**  
+**Phase 7: QT6 Port**  
+**Phase 8: Integration & Testing**
+
+See [docs/ROADMAP.md](docs/ROADMAP.md) for detailed phase breakdown.
+
+## Building
+
+```bash
+make all      # Build bootloader, kernel, and userspace
+make qemu     # Test in QEMU
+make clean    # Clean build artifacts
+```
+
+See [docs/BUILD.md](docs/BUILD.md) for detailed build instructions.
+
+## Documentation
+
+- [ARCHITECTURE.md](docs/ARCHITECTURE.md) - System architecture and design
+- [MINIMALISM.md](docs/MINIMALISM.md) - Extreme minimalism philosophy
+- [ROADMAP.md](docs/ROADMAP.md) - Development phases and milestones
+- [BUILD.md](docs/BUILD.md) - Build system and toolchain
+- [DEVELOPMENT.md](docs/DEVELOPMENT.md) - Development environment setup
+- [STATUS.md](docs/STATUS.md) - Current implementation status
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines. Remember: simplicity over features.
+
+## Target Hardware
+
+- **CPU**: AMD64 (x86-64)
+- **GPU**: Radeon RX 6600
+- **Input**: PS/2 or USB keyboard/mouse
+- **Boot**: UEFI
+
+## License
+
+See [LICENSE](LICENSE) file for details.
