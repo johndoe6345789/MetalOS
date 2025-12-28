@@ -6,6 +6,8 @@ cmake_minimum_required(VERSION 3.16)
 project(MetalOS_Kernel C ASM)
 
 # Source files
+# Note: Using GLOB for simplicity. For production, consider listing files explicitly.
+# If new files aren't detected, re-run cmake configuration.
 file(GLOB KERNEL_C_SOURCES "src/*.c")
 file(GLOB KERNEL_ASM_SOURCES "src/*.asm")
 

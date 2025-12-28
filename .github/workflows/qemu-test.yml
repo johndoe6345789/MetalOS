@@ -76,7 +76,8 @@ jobs:
         sleep 10
         
         # Take screenshot using ImageMagick (optional - don't fail if this doesn't work)
-        import -window root build/qemu-screenshot.png || echo "Screenshot capture failed (non-fatal)"
+        # Using subshell to prevent 'set -e' from affecting this optional step
+        { import -window root build/qemu-screenshot.png; } || echo "Screenshot capture failed (non-fatal)"
         
         # Gracefully stop QEMU (don't fail if already stopped)
         kill $QEMU_PID 2>/dev/null || true
