@@ -112,6 +112,9 @@ ninja
 pip3 install conan
 conan profile detect --force
 
+# Optional: Add MetalOS custom Conan repository (KernelCenter)
+conan remote add kernelcenter https://johndoe6345789.github.io/kernelcenter/
+
 # Install dependencies and generate toolchain (Release build by default)
 conan install . --build=missing
 
@@ -124,6 +127,8 @@ ninja
 # conan install . --build=missing -s build_type=Debug
 # cmake .. -DCMAKE_TOOLCHAIN_FILE=../build/Debug/generators/conan_toolchain.cmake -G Ninja
 ```
+
+**Custom Conan Repository**: MetalOS provides [KernelCenter](https://johndoe6345789.github.io/kernelcenter/), a custom Conan repository with MetalOS-specific packages. See [docs/CONAN.md](docs/CONAN.md) for details.
 
 ### Docker Build (Recommended for Consistency)
 
@@ -165,6 +170,7 @@ See [deps/README.md](deps/README.md) for detailed dependency management instruct
 - [MINIMALISM.md](docs/MINIMALISM.md) - Extreme minimalism philosophy
 - [ROADMAP.md](docs/ROADMAP.md) - Development phases and milestones
 - [BUILD.md](docs/BUILD.md) - Build system and toolchain
+- [CONAN.md](docs/CONAN.md) - Conan package manager and custom repository
 - [DEVELOPMENT.md](docs/DEVELOPMENT.md) - Development environment setup
 - [STATUS.md](docs/STATUS.md) - Current implementation status
 - [TESTING.md](docs/TESTING.md) - Unit tests and QEMU testing
