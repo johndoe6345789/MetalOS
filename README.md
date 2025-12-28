@@ -103,6 +103,8 @@ Build complete bootable image
 
 Full-screen rendering validation
 
+Philosophy: If it doesn't help QT6 Hello World, it doesn't exist.
+
 Input handling verification
 
 Test on QEMU
