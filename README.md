@@ -67,6 +67,19 @@ See [docs/ROADMAP.md](docs/ROADMAP.md) for detailed phase breakdown.
 
 ## Building
 
+### Docker Build (Recommended)
+
+The easiest way to build MetalOS with all dependencies:
+
+```bash
+./scripts/docker-build.sh              # Build Docker image
+./scripts/docker-run.sh scripts/setup-deps.sh  # Setup dependencies
+./scripts/docker-run.sh make all       # Build everything
+./scripts/docker-run.sh make qemu      # Test in QEMU
+```
+
+### Native Build
+
 ```bash
 make all      # Build bootloader, kernel, and userspace
 make test     # Run unit tests
@@ -90,9 +103,11 @@ See [docs/BUILD.md](docs/BUILD.md) for detailed build instructions and [docs/TES
 MetalOS manages third-party dependencies in-house for reproducibility and offline development:
 
 - **GPU Firmware** - AMD Navi 23 firmware blobs (dimgrey_cavefish_*.bin)
-- **Mesa RADV** - Vulkan driver for AMD GPUs
-- **QT6** - Application framework (minimal static build)
+- **Mesa RADV** - Vulkan driver for AMD GPUs (planned Phase 4)
+- **QT6** - Application framework (minimal static build, planned Phase 7)
 - **OVMF** - UEFI firmware for QEMU testing
+
+**Setup dependencies**: `./scripts/setup-deps.sh all`
 
 See [deps/README.md](deps/README.md) for detailed dependency management instructions.
 
