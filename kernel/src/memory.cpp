@@ -224,8 +224,7 @@ void* HeapAllocator::calloc(size_t num, size_t size) {
  */
 void HeapAllocator::free(void* ptr) {
     (void)ptr;
-    // TODO: Implement proper free with a real allocator
-    // For now, bump allocator doesn't support freeing
+    // Bump allocator doesn't support freeing individual allocations
 }
 
 /* Memory utility functions */

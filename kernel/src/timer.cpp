@@ -52,7 +52,7 @@ Timer::Timer() : ticks(0) {}
  * @brief Initialize the PIT to generate interrupts at specified frequency
  * 
  * The PIT works by counting down from a divisor value at its base frequency
- * of 1.193182 MHz. When the counter reaches zero, it generates an interrupt
+ * of 1193182 Hz (approximately 1.19 MHz). When the counter reaches zero, it generates an interrupt
  * and reloads the divisor.
  * 
  * For example, to get 1000 Hz (1ms ticks):
