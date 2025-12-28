@@ -10,7 +10,7 @@
 #include "kernel/memory.h"
 
 // Physical memory bitmap constants
-#define BITMAP_SIZE 32768  // Supports up to 128MB with 4KB pages
+#define BITMAP_SIZE 2097152  // Supports up to 64GB with 4KB pages (64GB / 4KB = 16M pages, 16M bits = 2MB bitmap)
 
 /* PhysicalMemoryManager class implementation */
 
@@ -28,7 +28,7 @@ PhysicalMemoryManager::PhysicalMemoryManager()
  * @brief Initialize the physical memory manager
  * 
  * Currently uses a simplified approach:
- * - Assumes 128MB of usable RAM starting at physical address 16MB (0x01000000)
+ * - Assumes up to 64GB of usable RAM starting at physical address 16MB (0x01000000)
  * - Clears the entire page bitmap to mark all pages as free
  * - TODO: Parse the UEFI memory map from bootInfo to properly detect available memory
  * 
@@ -41,8 +41,9 @@ PhysicalMemoryManager::PhysicalMemoryManager()
 void PhysicalMemoryManager::init(BootInfo* bootInfo) {
     (void)bootInfo;  // TODO: Parse UEFI memory map
     
-    // For now, assume 128MB of usable memory starting at 16MB
-    totalPages = (128 * 1024 * 1024) / PAGE_SIZE;
+    // For now, assume 64GB of usable memory starting at 16MB
+    // This supports any amount up to 64GB
+    totalPages = (64ULL * 1024 * 1024 * 1024) / PAGE_SIZE;
     
     // Clear bitmap
     for (uint64_t i = 0; i < BITMAP_SIZE; i++) {

@@ -35,7 +35,7 @@
   - Bitmap-based physical page allocator
   - Bump allocator for kernel heap (1MB)
   - Memory utilities (memset, memcpy, memcmp)
-  - Support for up to 128MB RAM
+  - Support for up to 64GB RAM
 
 #### PCI Bus Support
 - Files: `kernel/src/pci.c`, `kernel/include/kernel/pci.h`
