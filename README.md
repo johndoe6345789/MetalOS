@@ -18,7 +18,73 @@ This OS exists solely to run **one QT6 application** on **AMD64 + Radeon RX 6600
 ✅ **Static linking only** - Maximum simplicity  
 ✅ **Creative freedom** - Not bound by POSIX or tradition  
 ✅ **Precise drivers** - Hardware code follows specs exactly
-- The main app is kinda part of the kernel, but we just put it in a different folder in this repo. No concept of users, unless it just a feature in the QT6 app, but thats unrelated.
+
+
+1) Reality check: where the bloat really lives (RDNA2)
+
+On Navi 23, you will not get good performance without:
+	•	GPU firmware blobs (various dimgrey_cavefish_*.bin files; Navi 23’s codename is “dimgrey cavefish”, and Linux systems load firmware files with that prefix).  ￼
+	•	A real memory manager (VRAM/GTT, page tables, buffer objects)
+	•	Command submission (rings/queues) + fences/semaphores
+	•	A Vulkan driver implementation (or reuse one)
+
+So the “least bloat” strategy is: reuse a Vulkan implementation (Mesa RADV is the obvious candidate), but avoid importing a whole Unix stack by giving it a very small kernel/userspace interface tailored to your OS.
+
+RADV is explicitly a userspace Vulkan driver for modern AMD GPUs.  ￼
+
+⸻
+
+2) The best “toy OS but fast” plan: RADV + a tiny amdgpu-shaped shim
+
+Why this is the sweet spot
+	•	You keep your OS non-POSIX.
+	•	You avoid writing a Vulkan driver from scratch (the truly hard part).
+	•	You implement only the kernel-facing parts RADV needs: a buffer object + VM + submit + sync API.
+
+Shape of the stack
+
+MetalOS kernel
+	•	PCIe enumeration, BAR mapping
+	•	interrupts (MSI/MSI-X)
+	•	DMA mapping (or identity-map if you’re being reckless)
+	•	a GPU kernel driver that exposes a small ioctl-like API
+
+Userspace
+	•	gpu-service (optional but recommended for structure)
+	•	libradv-metal (a minimal libdrm-like bridge)
+	•	Mesa RADV compiled against your bridge (not Linux libdrm)
+
+This is “Unix-like internally” only in the sense of interfaces, not user experience.
+
+⸻
+
+3) Minimal kernel GPU API (the smallest set that still performs)
+
+Think in terms of four pillars:
+
+A) Firmware load + ASIC init
+	•	gpu_load_firmware(name, blob)
+	•	gpu_init() → returns chip info (gfx1032, VRAM size, doorbells, etc.)
+
+You will need those Navi23 firmware blobs (again: dimgrey_cavefish_*.bin family is the practical breadcrumb).  ￼
+
+B) Buffer objects (BOs)
+	•	bo_create(size, domain=VRAM|GTT, flags)
+	•	bo_map(bo) / bo_unmap(bo) (CPU mapping)
+	•	bo_export_handle(bo) (so Vulkan can bind memory)
+
+C) Virtual memory (GPU page tables)
+	•	vm_create()
+	•	vm_map(vm, bo, gpu_va, size, perms)
+	•	vm_unmap(vm, gpu_va, size)
+
+D) Submission + synchronization
+	•	queue_create(type=GFX|COMPUTE|DMA)
+	•	queue_submit(queue, cs_buffer, fence_out)
+	•	fence_wait(fence, timeout)
+	•	timeline_semaphore_* (optional, but hugely useful)
+
+If you implement these correctly, you get real GPU throughput.
 
 ## What We Cut
 
