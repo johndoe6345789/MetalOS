@@ -55,6 +55,7 @@ See [docs/ROADMAP.md](docs/ROADMAP.md) for detailed phase breakdown.
 
 ```bash
 make all      # Build bootloader, kernel, and userspace
+make test     # Run unit tests
 make qemu     # Test in QEMU
 make clean    # Clean build artifacts
 ```
@@ -69,6 +70,7 @@ See [docs/BUILD.md](docs/BUILD.md) for detailed build instructions.
 - [BUILD.md](docs/BUILD.md) - Build system and toolchain
 - [DEVELOPMENT.md](docs/DEVELOPMENT.md) - Development environment setup
 - [STATUS.md](docs/STATUS.md) - Current implementation status
+- [TESTING.md](docs/TESTING.md) - Unit tests and QEMU testing
 
 ## Contributing
 
