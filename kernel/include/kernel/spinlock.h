@@ -4,24 +4,39 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-// Spinlock structure
+#ifdef __cplusplus
+// C++ Spinlock class
+class Spinlock {
+private:
+    volatile uint32_t lock;
+
+public:
+    Spinlock();
+    
+    void init();
+    void acquire();
+    bool tryAcquire();
+    void release();
+    bool isLocked() const;
+};
+
+extern "C" {
+#endif
+
+// C-compatible spinlock structure
 typedef struct {
     volatile uint32_t lock;
 } spinlock_t;
 
-// Initialize spinlock
+// C-compatible functions
 void spinlock_init(spinlock_t* lock);
-
-// Acquire spinlock
 void spinlock_acquire(spinlock_t* lock);
-
-// Try to acquire spinlock (non-blocking)
 bool spinlock_try_acquire(spinlock_t* lock);
-
-// Release spinlock
 void spinlock_release(spinlock_t* lock);
-
-// Check if locked
 bool spinlock_is_locked(spinlock_t* lock);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // METALOS_KERNEL_SPINLOCK_H

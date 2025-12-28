@@ -19,7 +19,29 @@ typedef struct {
     uint64_t base;
 } __attribute__((packed)) gdt_ptr_t;
 
-// Initialize the Global Descriptor Table
+#ifdef __cplusplus
+// C++ GDT class
+class GDT {
+private:
+    gdt_entry_t entries[5];
+    gdt_ptr_t gdtPtr;
+    
+    void setGate(int num, uint32_t base, uint32_t limit, uint8_t access, uint8_t gran);
+
+public:
+    GDT();
+    
+    void init();
+};
+
+extern "C" {
+#endif
+
+// C-compatible GDT function
 void gdt_init(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // METALOS_KERNEL_GDT_H

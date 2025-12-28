@@ -1,3 +1,4 @@
+// THIS IS C++ NOW
 /*
  * MetalOS Kernel - SMP (Symmetric Multi-Processing) Support
  * 

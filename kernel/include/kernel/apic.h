@@ -19,11 +19,37 @@
 #define APIC_IPI_INIT         0x500
 #define APIC_IPI_STARTUP      0x600
 
-// APIC functions
+#ifdef __cplusplus
+// C++ APIC class
+class APIC {
+private:
+    volatile uint32_t* apicBase;
+    
+    uint32_t read(uint32_t offset) const;
+    void write(uint32_t offset, uint32_t value);
+
+public:
+    APIC();
+    
+    bool isAvailable() const;
+    void init();
+    uint8_t getId() const;
+    void sendEOI();
+    void sendIPI(uint8_t destApicId, uint8_t vector, uint32_t deliveryMode);
+};
+
+extern "C" {
+#endif
+
+// C-compatible APIC functions
 bool apic_is_available(void);
 void apic_init(void);
 uint8_t apic_get_id(void);
 void apic_send_eoi(void);
 void apic_send_ipi(uint8_t dest_apic_id, uint8_t vector, uint32_t delivery_mode);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // METALOS_KERNEL_APIC_H

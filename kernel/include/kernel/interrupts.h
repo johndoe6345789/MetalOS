@@ -28,10 +28,32 @@ typedef struct {
     uint64_t rip, cs, rflags, rsp, ss;
 } __attribute__((packed)) registers_t;
 
-// Initialize Interrupt Descriptor Table
-void idt_init(void);
+#ifdef __cplusplus
+// C++ InterruptManager class
+class InterruptManager {
+private:
+    idt_entry_t idt[256];
+    idt_ptr_t idtPtr;
+    
+    void setGate(uint8_t num, uint64_t handler, uint16_t selector, uint8_t flags);
+    void remapPIC();
 
-// Generic interrupt handler (called from assembly)
+public:
+    InterruptManager();
+    
+    void init();
+    void handleInterrupt(registers_t* regs);
+};
+
+extern "C" {
+#endif
+
+// C-compatible functions
+void idt_init(void);
 void interrupt_handler(registers_t* regs);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // METALOS_KERNEL_INTERRUPTS_H

@@ -3,16 +3,16 @@
 
 cmake_minimum_required(VERSION 3.16)
 
-project(MetalOS_Kernel C ASM)
+project(MetalOS_Kernel CXX ASM)
 
 # Source files
 # Note: Using GLOB for simplicity. For production, consider listing files explicitly.
 # If new files aren't detected, re-run cmake configuration.
-file(GLOB KERNEL_C_SOURCES "src/*.c")
+file(GLOB KERNEL_CXX_SOURCES "src/*.cpp")
 file(GLOB KERNEL_ASM_SOURCES "src/*.asm")
 
 set(KERNEL_SOURCES
-    ${KERNEL_C_SOURCES}
+    ${KERNEL_CXX_SOURCES}
 )
 
 # Find NASM assembler
@@ -42,7 +42,7 @@ else()
 endif()
 
 # Compiler flags for kernel
-set(KERNEL_CFLAGS
+set(KERNEL_CXXFLAGS
     -Wall
     -Wextra
     -Werror
@@ -50,19 +50,21 @@ set(KERNEL_CFLAGS
     -fno-stack-protector
     -mno-red-zone
     -mcmodel=large
+    -fno-exceptions
+    -fno-rtti
     -O2
 )
 
 # Create object library
 add_library(kernel_obj OBJECT ${KERNEL_SOURCES})
 target_include_directories(kernel_obj PRIVATE include)
-target_compile_options(kernel_obj PRIVATE ${KERNEL_CFLAGS})
+target_compile_options(kernel_obj PRIVATE ${KERNEL_CXXFLAGS})
 
 # Create kernel binary
 add_executable(kernel_elf $<TARGET_OBJECTS:kernel_obj> ${KERNEL_ASM_OBJECTS})
 set_target_properties(kernel_elf PROPERTIES
     OUTPUT_NAME metalos.elf
-    LINKER_LANGUAGE C
+    LINKER_LANGUAGE CXX
     POSITION_INDEPENDENT_CODE OFF
 )
 target_link_options(kernel_elf PRIVATE
