@@ -18,7 +18,7 @@ This OS exists solely to run **one QT6 application** on **AMD64 + Radeon RX 6600
 ✅ **Static linking only** - Maximum simplicity  
 ✅ **Creative freedom** - Not bound by POSIX or tradition  
 ✅ **Precise drivers** - Hardware code follows specs exactly
-- The main app is kionda part of the kernel, but we just put it in a different folder in this repo. No concept of users, unless it just a feature in the QT6 app, but thats unrelated.
+- The main app is kinda part of the kernel, but we just put it in a different folder in this repo. No concept of users, unless it just a feature in the QT6 app, but thats unrelated.
 
 ## What We Cut
 
