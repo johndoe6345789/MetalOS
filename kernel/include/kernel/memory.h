@@ -18,8 +18,8 @@
  * - 0 = page is free and available for allocation
  * - 1 = page is in use
  * 
- * The bitmap supports up to 128MB of physical memory (32768 bytes * 8 bits/byte
- * * 4KB per page = 128MB). Memory is assumed to start at physical address 0x01000000
+ * The bitmap supports up to 64GB of physical memory (2097152 bytes * 8 bits/byte
+ * * 4KB per page = 64GB). Memory is assumed to start at physical address 0x01000000
  * (16MB) to avoid conflicts with legacy hardware and the kernel itself.
  * 
  * This is a very simple allocator suitable for a minimal kernel. It does not:
@@ -29,7 +29,7 @@
  */
 class PhysicalMemoryManager {
 private:
-    uint8_t pageBitmap[32768];  ///< Bitmap tracking page allocation (128MB / 4KB pages)
+    uint8_t pageBitmap[2097152];  ///< Bitmap tracking page allocation (64GB / 4KB pages = 16M pages = 2MB bitmap)
     uint64_t totalPages;         ///< Total number of pages managed
     uint64_t usedPages;          ///< Number of pages currently allocated
 
@@ -39,8 +39,9 @@ public:
     
     /**
      * @brief Initialize the physical memory manager with boot information
-     * @param bootInfo Boot information from bootloader (currently unused, assumes 128MB)
-     * @note Currently hardcoded to manage 128MB starting at 16MB physical address
+     * @param bootInfo Boot information from bootloader containing UEFI memory map
+     * @note Parses the UEFI memory map to detect actual available RAM (up to 64GB)
+     * @note Falls back to 128MB if memory map is unavailable
      */
     void init(BootInfo* bootInfo);
     

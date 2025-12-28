@@ -158,7 +158,7 @@ if (gpu) {
 - **No Console Module**: As requested, no console.c/h files are created
 - **Minimal Design**: Only essential features for QT6 Hello World
 - **Bump Allocator**: Current heap doesn't support freeing (upgrade later if needed)
-- **Physical Memory**: Simple bitmap allocator (32768 pages max in current impl)
+- **Physical Memory**: Bitmap allocator with UEFI memory map parsing (supports up to 64GB, auto-detects available RAM)
 - **PCI Scan**: Scans all 256 buses, 32 devices per bus
 - **Timer**: Uses PIT in rate generator mode
 

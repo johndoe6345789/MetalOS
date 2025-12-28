@@ -10,7 +10,16 @@
 #include "kernel/memory.h"
 
 // Physical memory bitmap constants
-#define BITMAP_SIZE 32768  // Supports up to 128MB with 4KB pages
+#define BITMAP_SIZE 2097152  // Supports up to 64GB with 4KB pages (64GB / 4KB = 16M pages, 16M bits = 2MB bitmap)
+
+// EFI Memory Descriptor structure (from UEFI spec)
+struct EFI_MEMORY_DESCRIPTOR {
+    uint32_t Type;
+    uint64_t PhysicalStart;
+    uint64_t VirtualStart;
+    uint64_t NumberOfPages;
+    uint64_t Attribute;
+};
 
 /* PhysicalMemoryManager class implementation */
 
@@ -27,29 +36,113 @@ PhysicalMemoryManager::PhysicalMemoryManager()
 /**
  * @brief Initialize the physical memory manager
  * 
- * Currently uses a simplified approach:
- * - Assumes 128MB of usable RAM starting at physical address 16MB (0x01000000)
- * - Clears the entire page bitmap to mark all pages as free
- * - TODO: Parse the UEFI memory map from bootInfo to properly detect available memory
+ * Parses the UEFI memory map from the bootloader to detect available physical memory.
+ * Only considers memory regions that are usable:
+ * - EfiConventionalMemory (type 7): Free memory available for allocation
+ * - EfiBootServicesCode (type 3) and EfiBootServicesData (type 4): Reclaimable after boot
+ * - EfiLoaderCode (type 1) and EfiLoaderData (type 2): Reclaimable after boot
  * 
- * The 16MB starting address is chosen to avoid:
+ * Memory below 16MB (0x01000000) is avoided to prevent conflicts with:
  * - First 1MB: Legacy BIOS area, video memory, etc.
  * - 1MB-16MB: Kernel code, boot structures, and reserved areas
  * 
- * @param bootInfo Boot information structure (currently unused, TODO: parse memory map)
+ * @param bootInfo Boot information structure containing UEFI memory map
  */
 void PhysicalMemoryManager::init(BootInfo* bootInfo) {
-    (void)bootInfo;  // TODO: Parse UEFI memory map
-    
-    // For now, assume 128MB of usable memory starting at 16MB
-    totalPages = (128 * 1024 * 1024) / PAGE_SIZE;
-    
-    // Clear bitmap
+    // Clear bitmap - mark all pages as used initially
     for (uint64_t i = 0; i < BITMAP_SIZE; i++) {
-        pageBitmap[i] = 0;
+        pageBitmap[i] = 0xFF;  // All bits set = all pages marked as used
     }
     
     usedPages = 0;
+    totalPages = 0;
+    
+    // Define memory region base (16MB) to avoid low memory conflicts
+    const uint64_t MEMORY_BASE = 0x01000000UL;  // 16MB
+    
+    // Parse UEFI memory map if available
+    if (bootInfo && bootInfo->memory_map && bootInfo->memory_map_size > 0) {
+        uint8_t* map = (uint8_t*)bootInfo->memory_map;
+        uint64_t descriptor_size = bootInfo->memory_map_descriptor_size;
+        uint64_t num_descriptors = bootInfo->memory_map_size / descriptor_size;
+        
+        // EFI Memory types we consider usable
+        const uint32_t EfiLoaderCode = 1;
+        const uint32_t EfiLoaderData = 2;
+        const uint32_t EfiBootServicesCode = 3;
+        const uint32_t EfiBootServicesData = 4;
+        const uint32_t EfiConventionalMemory = 7;
+        
+        uint64_t highest_usable_address = 0;
+        
+        // First pass: find highest usable address and mark free pages
+        for (uint64_t i = 0; i < num_descriptors; i++) {
+            EFI_MEMORY_DESCRIPTOR* desc = (EFI_MEMORY_DESCRIPTOR*)(map + i * descriptor_size);
+            
+            // Check if this is a usable memory type
+            bool is_usable = (desc->Type == EfiConventionalMemory ||
+                            desc->Type == EfiBootServicesCode ||
+                            desc->Type == EfiBootServicesData ||
+                            desc->Type == EfiLoaderCode ||
+                            desc->Type == EfiLoaderData);
+            
+            if (is_usable) {
+                uint64_t region_start = desc->PhysicalStart;
+                uint64_t region_size = desc->NumberOfPages * PAGE_SIZE;  // EFI pages are 4KB
+                uint64_t region_end = region_start + region_size;
+                
+                // Only consider memory at or above MEMORY_BASE
+                if (region_end > MEMORY_BASE) {
+                    uint64_t usable_start = (region_start < MEMORY_BASE) ? MEMORY_BASE : region_start;
+                    uint64_t usable_end = region_end;
+                    
+                    // Track highest address
+                    if (usable_end > highest_usable_address) {
+                        highest_usable_address = usable_end;
+                    }
+                    
+                    // Mark pages in this region as free in the bitmap
+                    uint64_t start_page = (usable_start - MEMORY_BASE) / PAGE_SIZE;
+                    uint64_t end_page = (usable_end - MEMORY_BASE) / PAGE_SIZE;
+                    
+                    for (uint64_t page = start_page; page < end_page; page++) {
+                        uint64_t byte = page / 8;
+                        uint64_t bit = page % 8;
+                        
+                        // Bounds check
+                        if (byte >= BITMAP_SIZE) {
+                            break;
+                        }
+                        
+                        // Mark page as free (clear bit)
+                        pageBitmap[byte] &= ~(1 << bit);
+                    }
+                }
+            }
+        }
+        
+        // Calculate total pages based on highest usable address
+        if (highest_usable_address > MEMORY_BASE) {
+            totalPages = (highest_usable_address - MEMORY_BASE) / PAGE_SIZE;
+            
+            // Cap at bitmap capacity
+            uint64_t max_pages = BITMAP_SIZE * 8;
+            if (totalPages > max_pages) {
+                totalPages = max_pages;
+            }
+        }
+    }
+    
+    // Fallback: if no memory map or parsing failed, use safe defaults
+    if (totalPages == 0) {
+        // Assume 128MB as a conservative fallback
+        totalPages = (128 * 1024 * 1024) / PAGE_SIZE;
+        
+        // Mark all pages as free
+        for (uint64_t i = 0; i < BITMAP_SIZE; i++) {
+            pageBitmap[i] = 0;
+        }
+    }
 }
 
 /**
@@ -72,6 +165,11 @@ void* PhysicalMemoryManager::allocPage() {
     for (uint64_t i = 0; i < totalPages; i++) {
         uint64_t byte = i / 8;
         uint64_t bit = i % 8;
+        
+        // Bounds check to prevent buffer overflow
+        if (byte >= BITMAP_SIZE) {
+            break;
+        }
         
         if (!(pageBitmap[byte] & (1 << bit))) {
             // Mark as used
@@ -109,6 +207,16 @@ void PhysicalMemoryManager::freePage(void* page) {
     
     uint64_t byte = pageIdx / 8;
     uint64_t bit = pageIdx % 8;
+    
+    // Bounds check to prevent buffer overflow
+    if (byte >= BITMAP_SIZE) {
+        return;
+    }
+    
+    // Check if page is already free to prevent underflow
+    if (!(pageBitmap[byte] & (1 << bit))) {
+        return;  // Already free, nothing to do
+    }
     
     // Mark as free
     pageBitmap[byte] &= ~(1 << bit);
