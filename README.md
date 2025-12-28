@@ -1,6 +1,6 @@
 # MetalOS
 
-**An extreme minimalism OS - One app, one purpose, zero cruft.**
+**An extremely minimalist OS - One app, one purpose, zero cruft.**
 
 MetalOS boots directly to a single full-screen QT6 application. No shell, no filesystem, no complexity.
 
