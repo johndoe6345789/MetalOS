@@ -25,7 +25,6 @@ jobs:
           ovmf \
           mtools \
           xorriso \
-          scrot \
           imagemagick
     
     - name: Build bootloader

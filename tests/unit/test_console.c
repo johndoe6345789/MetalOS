@@ -19,8 +19,8 @@ typedef struct {
     uint32_t bg_color;
 } Console;
 
-// Mock framebuffer for testing
-static uint32_t test_framebuffer[1920 * 1080];
+// Mock framebuffer for testing (using smaller size to avoid stack issues)
+static uint32_t test_framebuffer[800 * 600];
 
 // Simplified console functions for unit testing
 // In real implementation, these would be in a testable module

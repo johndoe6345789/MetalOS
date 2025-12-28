@@ -50,7 +50,7 @@ static TestStats test_stats = {0, 0, 0};
     do { \
         if ((a) != (b)) { \
             printf(COLOR_RED "[FAILED] " COLOR_RESET "%s:%d: Expected %lld, got %lld\n", \
-                   __FILE__, __LINE__, (long long)(a), (long long)(b)); \
+                   __FILE__, __LINE__, (long long)(b), (long long)(a)); \
             test_stats.failed++; \
             return; \
         } \
@@ -59,8 +59,8 @@ static TestStats test_stats = {0, 0, 0};
 #define ASSERT_NE(a, b) \
     do { \
         if ((a) == (b)) { \
-            printf(COLOR_RED "[FAILED] " COLOR_RESET "%s:%d: Expected not equal: %lld == %lld\n", \
-                   __FILE__, __LINE__, (long long)(a), (long long)(b)); \
+            printf(COLOR_RED "[FAILED] " COLOR_RESET "%s:%d: Values should not be equal: %lld\n", \
+                   __FILE__, __LINE__, (long long)(a)); \
             test_stats.failed++; \
             return; \
         } \
