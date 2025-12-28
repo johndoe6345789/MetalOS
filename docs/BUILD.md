@@ -21,10 +21,12 @@ The easiest way to build MetalOS is using Docker, which provides a pre-configure
 ./scripts/docker-run.sh scripts/setup-deps.sh
 
 # 3. Build MetalOS
-./scripts/docker-run.sh make all
+mkdir build && cd build
+cmake ..
+cmake --build .
 
 # 4. Test in QEMU (headless mode)
-./scripts/docker-run.sh make qemu
+cmake --build . --target qemu
 
 # 5. Optional: Interactive shell in container
 ./scripts/docker-run.sh /bin/bash
@@ -33,7 +35,7 @@ The easiest way to build MetalOS is using Docker, which provides a pre-configure
 ### What's Included in Docker
 
 The Docker image includes:
-- **Build tools**: GCC, NASM, Make, CMake, Meson
+- **Build tools**: GCC, NASM, CMake, Meson
 - **QEMU**: For testing with UEFI firmware
 - **OVMF**: UEFI firmware for QEMU
 - **Dependency management**: Scripts to download AMD firmware, Mesa RADV, QT6
@@ -127,11 +129,15 @@ This produces `kernel/metalos.bin` - the kernel binary.
 ## Creating Bootable Image
 
 ```bash
-# From repository root
-make image
+# From repository root, if you haven't already
+mkdir build && cd build
+cmake ..
+
+# Create the bootable image
+cmake --build . --target image
 ```
 
-This creates `build/metalos.img` - a bootable disk image containing:
+This creates `build/build/metalos.img` - a bootable disk image containing:
 - EFI System Partition with bootloader
 - Kernel binary
 - Any required data files
@@ -146,41 +152,33 @@ Ensure QEMU and OVMF are installed:
 
 ```bash
 # Ubuntu/Debian
-sudo apt-get install qemu-system-x86 ovmf mtools
+sudo apt-get install qemu-system-x86 ovmf mtools cmake
 
 # Arch Linux
-sudo pacman -S qemu-full edk2-ovmf mtools
+sudo pacman -S qemu-full edk2-ovmf mtools cmake
 
 # Fedora
-sudo dnf install qemu-system-x86 edk2-ovmf mtools
+sudo dnf install qemu-system-x86 edk2-ovmf mtools cmake
 ```
 
 ### Boot MetalOS in QEMU
 
 ```bash
-make qemu
+cd build
+cmake --build . --target qemu
 ```
 
 This will:
-1. Build bootloader and kernel (or use placeholders if build fails)
+1. Build bootloader and kernel
 2. Create a bootable FAT32 disk image with UEFI boot structure
 3. Launch QEMU with OVMF UEFI firmware in headless mode
-4. Boot the system (will drop to UEFI shell until bootloader is complete)
-
-**Display Options**: By default, QEMU runs in headless mode (no graphics). To use graphical display:
-
-```bash
-# Use GTK display (if available)
-make qemu QEMU_DISPLAY=gtk
-
-# Use SDL display (if available)
-make qemu QEMU_DISPLAY=sdl
-```
+4. Boot the system
 
 ### Boot with Debug Output
 
 ```bash
-make qemu-debug
+cd build
+cmake --build . --target qemu-debug
 ```
 
 This includes CPU interrupt and reset debugging output.
@@ -191,7 +189,8 @@ For debugging with GDB:
 
 ```bash
 # Terminal 1 - Start QEMU with GDB server
-make qemu-gdb
+cd build
+cmake --build . --target qemu-gdb
 
 # Terminal 2 - Connect GDB
 gdb kernel/metalos.bin
@@ -206,7 +205,8 @@ QEMU will wait for GDB connection before starting execution.
 To verify QEMU and OVMF are properly installed without needing a bootable OS image:
 
 ```bash
-make qemu-uefi-test
+cd build
+cmake --build . --target qemu-uefi-test
 ```
 
 This boots directly to the UEFI shell, confirming your QEMU+OVMF setup works correctly.
@@ -292,10 +292,14 @@ ENABLE_SERIAL ?= 1
 
 ```bash
 # Clean all build artifacts
-make clean
+cd build
+cmake --build . --target clean
 
-# Clean everything including dependencies
-make distclean
+# Or remove the build directory entirely
+cd ..
+rm -rf build
+mkdir build && cd build
+cmake ..
 ```
 
 ## Troubleshooting
