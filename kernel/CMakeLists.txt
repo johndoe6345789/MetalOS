@@ -6,22 +6,40 @@ cmake_minimum_required(VERSION 3.16)
 project(MetalOS_Kernel C ASM)
 
 # Source files
+# Note: Using GLOB for simplicity. For production, consider listing files explicitly.
+# If new files aren't detected, re-run cmake configuration.
+file(GLOB KERNEL_C_SOURCES "src/*.c")
+file(GLOB KERNEL_ASM_SOURCES "src/*.asm")
+
 set(KERNEL_SOURCES
-    src/main.c
+    ${KERNEL_C_SOURCES}
 )
 
-# Find all source files in subdirectories
-file(GLOB_RECURSE CORE_SOURCES "src/core/*.c")
-file(GLOB_RECURSE HAL_SOURCES "src/hal/*.c")
-file(GLOB_RECURSE DRIVER_SOURCES "src/drivers/*.c")
-file(GLOB_RECURSE SYSCALL_SOURCES "src/syscall/*.c")
-
-list(APPEND KERNEL_SOURCES 
-    ${CORE_SOURCES}
-    ${HAL_SOURCES}
-    ${DRIVER_SOURCES}
-    ${SYSCALL_SOURCES}
-)
+# Find NASM assembler
+find_program(NASM nasm)
+if(NOT NASM)
+    message(WARNING "NASM not found - assembly files will not be built")
+    message(WARNING "Install NASM: sudo apt-get install nasm")
+else()
+    message(STATUS "Found NASM: ${NASM}")
+    
+    # Assemble each .asm file
+    set(KERNEL_ASM_OBJECTS "")
+    foreach(asm_file ${KERNEL_ASM_SOURCES})
+        get_filename_component(asm_name ${asm_file} NAME_WE)
+        set(asm_obj "${CMAKE_CURRENT_BINARY_DIR}/${asm_name}.o")
+        
+        add_custom_command(
+            OUTPUT ${asm_obj}
+            COMMAND ${NASM} -f elf64 ${asm_file} -o ${asm_obj}
+            DEPENDS ${asm_file}
+            COMMENT "Assembling ${asm_name}.asm"
+            VERBATIM
+        )
+        
+        list(APPEND KERNEL_ASM_OBJECTS ${asm_obj})
+    endforeach()
+endif()
 
 # Compiler flags for kernel
 set(KERNEL_CFLAGS
@@ -41,7 +59,7 @@ target_include_directories(kernel_obj PRIVATE include)
 target_compile_options(kernel_obj PRIVATE ${KERNEL_CFLAGS})
 
 # Create kernel binary
-add_executable(kernel_elf $<TARGET_OBJECTS:kernel_obj>)
+add_executable(kernel_elf $<TARGET_OBJECTS:kernel_obj> ${KERNEL_ASM_OBJECTS})
 set_target_properties(kernel_elf PROPERTIES
     OUTPUT_NAME metalos.elf
     LINKER_LANGUAGE C
