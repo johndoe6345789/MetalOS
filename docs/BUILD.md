@@ -88,10 +88,43 @@ This creates `build/metalos.img` - a bootable disk image containing:
 
 ## Testing in QEMU
 
-### Boot MetalOS
+MetalOS includes comprehensive QEMU support with UEFI firmware (OVMF) for testing.
+
+### Prerequisites
+
+Ensure QEMU and OVMF are installed:
+
+```bash
+# Ubuntu/Debian
+sudo apt-get install qemu-system-x86 ovmf mtools
+
+# Arch Linux
+sudo pacman -S qemu-full edk2-ovmf mtools
+
+# Fedora
+sudo dnf install qemu-system-x86 edk2-ovmf mtools
+```
+
+### Boot MetalOS in QEMU
 
 ```bash
 make qemu
+```
+
+This will:
+1. Build bootloader and kernel (or use placeholders if build fails)
+2. Create a bootable FAT32 disk image with UEFI boot structure
+3. Launch QEMU with OVMF UEFI firmware in headless mode
+4. Boot the system (will drop to UEFI shell until bootloader is complete)
+
+**Display Options**: By default, QEMU runs in headless mode (no graphics). To use graphical display:
+
+```bash
+# Use GTK display (if available)
+make qemu QEMU_DISPLAY=gtk
+
+# Use SDL display (if available)
+make qemu QEMU_DISPLAY=sdl
 ```
 
 ### Boot with Debug Output
@@ -100,17 +133,33 @@ make qemu
 make qemu-debug
 ```
 
+This includes CPU interrupt and reset debugging output.
+
 ### Boot with GDB Support
 
+For debugging with GDB:
+
 ```bash
-# Terminal 1
+# Terminal 1 - Start QEMU with GDB server
 make qemu-gdb
 
-# Terminal 2
+# Terminal 2 - Connect GDB
 gdb kernel/metalos.bin
 (gdb) target remote localhost:1234
 (gdb) continue
 ```
+
+QEMU will wait for GDB connection before starting execution.
+
+### Test QEMU UEFI Setup
+
+To verify QEMU and OVMF are properly installed without needing a bootable OS image:
+
+```bash
+make qemu-uefi-test
+```
+
+This boots directly to the UEFI shell, confirming your QEMU+OVMF setup works correctly.
 
 ## Testing on Real Hardware
 

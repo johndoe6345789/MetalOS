@@ -76,14 +76,14 @@ int main(void) {
 
 ### 2. QEMU Integration Tests
 
-QEMU tests verify the full system boots correctly in an emulated environment.
+QEMU tests verify the full system boots correctly in an emulated UEFI environment.
 
 **Location**: `.github/workflows/qemu-test.yml`
 
 **What it does**:
-1. Builds bootloader and kernel
-2. Creates bootable image
-3. Launches QEMU with UEFI firmware
+1. Builds bootloader and kernel (or uses placeholders during development)
+2. Creates bootable UEFI disk image with FAT32 filesystem
+3. Launches QEMU with OVMF (UEFI firmware)
 4. Waits for boot sequence (configurable timeout)
 5. Captures screenshot of boot state
 6. Captures serial output
@@ -96,16 +96,39 @@ QEMU tests verify the full system boots correctly in an emulated environment.
 These artifacts are uploaded to GitHub Actions for inspection.
 
 **Running locally**:
+
 ```bash
-# Build and test in QEMU
+# Build and test in QEMU with UEFI
 make qemu
 
-# With debug output
+# Use graphical display (if not in headless environment)
+make qemu QEMU_DISPLAY=gtk
+
+# With debug output (shows CPU interrupts and resets)
 make qemu-debug
 
-# With GDB server
+# With GDB server for debugging
 make qemu-gdb
+
+# Test UEFI firmware setup only (no OS image required)
+make qemu-uefi-test
 ```
+
+**QEMU UEFI Testing Features**:
+- ✅ Automatic OVMF firmware detection across different Linux distributions
+- ✅ FAT32 disk image creation with proper UEFI boot structure
+- ✅ Headless mode support for CI/CD environments
+- ✅ Optional graphical display for local development
+- ✅ Serial console output for debugging
+- ✅ GDB integration for kernel debugging
+
+**Display Modes**:
+- `none` (default): Headless mode, no graphics, works in CI/CD
+- `gtk`: GTK-based graphical window
+- `sdl`: SDL-based graphical window
+- `curses`: Text-based UI in terminal
+
+Set display mode: `make qemu QEMU_DISPLAY=<mode>`
 
 ## Test Framework
 
