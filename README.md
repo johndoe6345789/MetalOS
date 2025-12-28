@@ -105,6 +105,28 @@ Full-screen rendering validation
 
 Philosophy: If it doesn't help QT6 Hello World, it doesn't exist.
 
+
+What We Cut (see docs/MINIMALISM.md):
+
+❌ Scheduler (one app = always running)
+❌ Process management (one process only)
+❌ File system (app embedded)
+❌ Networking (not needed)
+❌ Shell/CLI (boot directly to app)
+❌ Security (trust everything)
+❌ Multi-core (one CPU)
+❌ Dynamic linking (static only)
+❌ Virtual memory complexity (identity map)
+❌ ACPI (try without it)
+What We Keep (absolute minimum):
+
+✅ Memory allocator (bump allocator)
+✅ ~5 interrupt handlers (timer, keyboard, mouse, GPU)
+✅ GPU driver (framebuffer only, ~50 KB)
+✅ Input drivers (PS/2 first, USB fallback, ~20 KB)
+✅ PCI scan (just find our GPU)
+✅ ~5 syscalls (write, mmap, ioctl, poll, exit)
+
 Input handling verification
 
 Test on QEMU
