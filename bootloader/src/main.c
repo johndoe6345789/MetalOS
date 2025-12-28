@@ -30,14 +30,14 @@ static int guid_compare(const EFI_GUID* a, const EFI_GUID* b) {
 }
 
 // Helper: Memory set
-static void* memset(void* s, int c, size_t n) {
+static VOID* efi_memset(VOID* s, int c, UINTN n) {
     unsigned char* p = s;
     while (n--) *p++ = (unsigned char)c;
     return s;
 }
 
 // Helper: Memory copy
-static void* memcpy(void* dest, const void* src, size_t n) {
+static VOID* efi_memcpy(VOID* dest, const VOID* src, UINTN n) {
     unsigned char* d = dest;
     const unsigned char* s = src;
     while (n--) *d++ = *s++;
@@ -143,8 +143,8 @@ EFI_STATUS load_kernel(EFI_HANDLE ImageHandle, BootInfo* boot_info) {
     
     UINT64 kernel_size = file_info.FileSize;
     
-    // Allocate memory for kernel at KERNEL_LOAD_ADDRESS
-    // We'll just use AllocatePool for simplicity
+    // Allocate memory for kernel - use temporary buffer since UEFI may not
+    // allow us to allocate at specific physical address before ExitBootServices
     VOID* kernel_buffer = NULL;
     status = gBS->AllocatePool(EfiLoaderData, kernel_size, &kernel_buffer);
     if (status != EFI_SUCCESS) {
@@ -163,8 +163,11 @@ EFI_STATUS load_kernel(EFI_HANDLE ImageHandle, BootInfo* boot_info) {
         return EFI_LOAD_ERROR;
     }
     
-    // Copy kernel to final location
-    memcpy((void*)KERNEL_LOAD_ADDRESS, kernel_buffer, kernel_size);
+    // Copy kernel to final location (KERNEL_LOAD_ADDRESS)
+    // Note: This is a simplified approach. In a production bootloader,
+    // we would validate that this memory region is available by checking
+    // the memory map. For now, we rely on UEFI having mapped low memory.
+    efi_memcpy((VOID*)KERNEL_LOAD_ADDRESS, kernel_buffer, kernel_size);
     
     // Store kernel info
     boot_info->kernel_base = KERNEL_LOAD_ADDRESS;
@@ -206,7 +209,7 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable) {
     // Initialize
     gST = SystemTable;
     gBS = SystemTable->BootServices;
-    memset(&boot_info, 0, sizeof(BootInfo));
+    efi_memset(&boot_info, 0, sizeof(BootInfo));
     
     // Print banner
     print_string(u"MetalOS v0.1 - MINIMAL BOOTLOADER\r\n");
@@ -276,17 +279,27 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable) {
         gBS->FreePool(memory_map);
         
         memory_map_size = 0;
-        gBS->GetMemoryMap(&memory_map_size, NULL, &map_key, &descriptor_size, &descriptor_version);
+        status = gBS->GetMemoryMap(&memory_map_size, NULL, &map_key, &descriptor_size, &descriptor_version);
         memory_map_size += 2 * descriptor_size;
-        gBS->AllocatePool(EfiLoaderData, memory_map_size, (void**)&memory_map);
-        gBS->GetMemoryMap(&memory_map_size, memory_map, &map_key, &descriptor_size, &descriptor_version);
+        
+        status = gBS->AllocatePool(EfiLoaderData, memory_map_size, (VOID**)&memory_map);
+        if (status != EFI_SUCCESS) {
+            // Can't print after ExitBootServices fails
+            return status;
+        }
+        
+        status = gBS->GetMemoryMap(&memory_map_size, memory_map, &map_key, &descriptor_size, &descriptor_version);
+        if (status != EFI_SUCCESS) {
+            gBS->FreePool(memory_map);
+            return status;
+        }
         
         boot_info.memory_map = memory_map;
         boot_info.memory_map_size = memory_map_size;
         
         status = gBS->ExitBootServices(ImageHandle, map_key);
         if (status != EFI_SUCCESS) {
-            // Can't print after this point if it fails
+            // Still failed - can't continue
             return status;
         }
     }

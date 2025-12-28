@@ -276,9 +276,10 @@ cmake --build build
 **Use: Conan + CMake**
 ```bash
 # When we add QT6, Mesa RADV, etc.
-conan install . --build=missing
-cmake --preset conan-release
-cmake --build --preset conan-release
+mkdir build && cd build
+conan install .. --build=missing
+cmake .. -DCMAKE_TOOLCHAIN_FILE=../build/Release/generators/conan_toolchain.cmake
+cmake --build .
 ```
 
 ---
