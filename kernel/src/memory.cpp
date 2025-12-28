@@ -12,6 +12,15 @@
 // Physical memory bitmap constants
 #define BITMAP_SIZE 2097152  // Supports up to 64GB with 4KB pages (64GB / 4KB = 16M pages, 16M bits = 2MB bitmap)
 
+// EFI Memory Descriptor structure (from UEFI spec)
+struct EFI_MEMORY_DESCRIPTOR {
+    uint32_t Type;
+    uint64_t PhysicalStart;
+    uint64_t VirtualStart;
+    uint64_t NumberOfPages;
+    uint64_t Attribute;
+};
+
 /* PhysicalMemoryManager class implementation */
 
 /**
@@ -68,14 +77,7 @@ void PhysicalMemoryManager::init(BootInfo* bootInfo) {
         
         // First pass: find highest usable address and mark free pages
         for (uint64_t i = 0; i < num_descriptors; i++) {
-            // Cast to EFI_MEMORY_DESCRIPTOR structure
-            struct {
-                uint32_t Type;
-                uint64_t PhysicalStart;
-                uint64_t VirtualStart;
-                uint64_t NumberOfPages;
-                uint64_t Attribute;
-            }* desc = (decltype(desc))(map + i * descriptor_size);
+            EFI_MEMORY_DESCRIPTOR* desc = (EFI_MEMORY_DESCRIPTOR*)(map + i * descriptor_size);
             
             // Check if this is a usable memory type
             bool is_usable = (desc->Type == EfiConventionalMemory ||
@@ -86,7 +88,7 @@ void PhysicalMemoryManager::init(BootInfo* bootInfo) {
             
             if (is_usable) {
                 uint64_t region_start = desc->PhysicalStart;
-                uint64_t region_size = desc->NumberOfPages * 4096;  // EFI pages are 4KB
+                uint64_t region_size = desc->NumberOfPages * PAGE_SIZE;  // EFI pages are 4KB
                 uint64_t region_end = region_start + region_size;
                 
                 // Only consider memory at or above MEMORY_BASE
@@ -209,6 +211,11 @@ void PhysicalMemoryManager::freePage(void* page) {
     // Bounds check to prevent buffer overflow
     if (byte >= BITMAP_SIZE) {
         return;
+    }
+    
+    // Check if page is already free to prevent underflow
+    if (!(pageBitmap[byte] & (1 << bit))) {
+        return;  // Already free, nothing to do
     }
     
     // Mark as free
