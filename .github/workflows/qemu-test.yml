@@ -10,6 +10,9 @@ on:
 jobs:
   qemu-boot-test:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: write  # For uploading artifacts
     
     steps:
     - name: Checkout repository
