@@ -1,8 +1,25 @@
 # MetalOS
 
-A minimal operating system built from the ground up to run QT6 applications on AMD64 hardware with Radeon RX 6600 GPU and UEFI boot.
+**The most minimal OS possible that runs QT6 Hello World.**
 
-**Not Linux. Not BSD. Not Windows.** Just enough OS to run a QT6 Hello World full-screen application.
+Not Linux. Not BSD. Not Windows. Just enough code to boot, initialize GPU, and run one app.
+
+## Extreme Minimalism
+
+MetalOS is an exercise in **absolute minimalism**:
+
+- ❌ **No scheduler** - one app = always running
+- ❌ **No process management** - one process only
+- ❌ **No file system** - app embedded in boot image
+- ❌ **No networking** - not needed
+- ❌ **No shell/command line** - boot directly to app
+- ❌ **No security** - trust everything
+- ❌ **No multi-core** - one CPU core
+- ❌ **No dynamic linking** - static link everything
+
+**If it doesn't help QT6 Hello World run, it doesn't exist.**
+
+Target: **< 200 KB OS code** (excluding QT6 itself)
 
 ## Project Status
 
@@ -12,7 +29,23 @@ Currently: Project structure, documentation, and skeleton code in place.
 
 ## What is MetalOS?
 
-MetalOS is a **minimal, purpose-built operating system** with a single goal: demonstrate that you can build a custom OS from scratch to run modern GUI applications (specifically QT6).
+MetalOS is **the smallest possible operating system** that can boot QT6 Hello World on specific hardware.
+
+### Philosophy
+
+Every feature must answer: **"Does this help run QT6 Hello World?"**
+
+If no → it doesn't exist.
+
+### Aggressive Minimalism
+
+- **Bootloader**: < 10 KB (just load kernel and jump)
+- **Kernel**: < 100 KB (memory, interrupts, drivers)
+- **GPU Driver**: < 50 KB (minimal display init)
+- **Input Drivers**: < 20 KB (keyboard + mouse only)
+- **Total OS**: ~200 KB
+
+Compare to Linux kernel: ~30 MB. We're **150x smaller** by doing only one thing.
 
 ### Key Features
 
@@ -82,10 +115,13 @@ See [docs/BUILD.md](docs/BUILD.md) for instructions on creating a bootable USB d
 
 ## Documentation
 
-- **[ARCHITECTURE.md](docs/ARCHITECTURE.md)** - System design and architecture
-- **[BUILD.md](docs/BUILD.md)** - Build instructions and dependencies
-- **[DEVELOPMENT.md](docs/DEVELOPMENT.md)** - Development workflow and guidelines
-- **[ROADMAP.md](docs/ROADMAP.md)** - Development phases and timeline
+- **[MINIMALISM.md](docs/MINIMALISM.md)** - ⭐ **START HERE** - Philosophy and what we cut
+- **[ARCHITECTURE.md](docs/ARCHITECTURE.md)** - System design (minimal version)
+- **[ROADMAP.md](docs/ROADMAP.md)** - Development phases
+- **[BUILD.md](docs/BUILD.md)** - Build instructions
+- **[DEVELOPMENT.md](docs/DEVELOPMENT.md)** - Development workflow
+- **[COMPONENTS.md](docs/COMPONENTS.md)** - Component checklist
+- **[STATUS.md](docs/STATUS.md)** - Current implementation status
 
 ## Project Structure
 
@@ -116,13 +152,13 @@ See [docs/ROADMAP.md](docs/ROADMAP.md) for detailed breakdown.
 
 ## Why?
 
-**Learning**: Building an OS from scratch is the ultimate systems programming education.
+**Minimalism**: How small can an OS be and still run GUI apps?
 
-**Minimal Design**: Modern OSes are complex. This project asks: "What's the absolute minimum needed for a GUI application?"
+**Learning**: Building an OS from scratch is the ultimate systems programming challenge.
 
-**Custom Hardware**: Show that you can optimize an OS for specific hardware instead of supporting everything.
+**Proof of Concept**: Modern frameworks like QT6 can run on tiny custom OSes.
 
-**QT6 Demo**: Prove that modern application frameworks can run on custom OS implementations.
+**Fun**: Because we can.
 
 ## Technology Stack
 
@@ -142,15 +178,22 @@ See [docs/ROADMAP.md](docs/ROADMAP.md) for detailed breakdown.
 
 ## Contributing
 
-This is primarily a learning/demonstration project, but contributions are welcome!
+**Golden Rule**: If it doesn't help QT6 Hello World, don't add it.
 
-**Guidelines**:
-- Keep it minimal - every feature must justify its existence
-- Document your changes
-- Follow existing code style
-- Test on QEMU before submitting
+Contributions welcome for:
+- Simplifying existing code (make it smaller!)
+- Bug fixes
+- GPU driver work (hardest part)
+- QT6 port work
+- Documentation
 
-See [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) for details.
+Not welcome:
+- Adding features "for completeness"
+- POSIX compatibility
+- Supporting other hardware
+- Generalizing anything
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) and [docs/MINIMALISM.md](docs/MINIMALISM.md).
 
 ## License
 

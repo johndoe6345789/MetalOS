@@ -1,12 +1,13 @@
 /*
  * MetalOS UEFI Bootloader
  * 
- * This is a minimal UEFI bootloader that:
- * 1. Initializes graphics output
- * 2. Loads the kernel from disk
- * 3. Retrieves memory map and system information
- * 4. Exits boot services
- * 5. Transfers control to kernel
+ * MINIMAL bootloader:
+ * 1. Get framebuffer from UEFI
+ * 2. Load kernel blob from disk
+ * 3. Exit boot services
+ * 4. Jump to kernel
+ * 
+ * That's it. No fancy stuff.
  */
 
 #include "bootloader.h"
@@ -116,46 +117,35 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable) {
     gST = SystemTable;
     
     // Print banner
-    print_string(u"MetalOS Bootloader v0.1.0\r\n");
-    print_string(u"=========================\r\n\r\n");
+    print_string(u"MetalOS v0.1 - MINIMAL BOOTLOADER\r\n");
+    print_string(u"==================================\r\n\r\n");
     
-    // Initialize graphics
-    print_string(u"Initializing graphics...\r\n");
+    // Get framebuffer (don't care about resolution, take what UEFI gives us)
+    print_string(u"Getting framebuffer...\r\n");
     status = initialize_graphics(ImageHandle);
-    print_status(u"Graphics initialization", status);
     if (status != EFI_SUCCESS) {
-        print_string(u"WARNING: Graphics initialization failed, continuing...\r\n");
+        print_string(u"WARNING: No graphics, continuing anyway...\r\n");
     }
     
-    // Load kernel
+    // Load kernel (just read metalos.bin, don't overthink it)
     print_string(u"Loading kernel...\r\n");
     status = load_kernel(ImageHandle);
-    print_status(u"Kernel load", status);
     if (status != EFI_SUCCESS) {
-        print_string(u"ERROR: Failed to load kernel\r\n");
+        print_string(u"ERROR: Can't load kernel\r\n");
         return status;
     }
     
-    // Get ACPI information
-    print_string(u"Retrieving ACPI tables...\r\n");
-    boot_info.rsdp = get_rsdp();
+    // Get memory map (minimal info)
+    print_string(u"Getting memory map...\r\n");
+    // TODO: GetMemoryMap
     
-    // Get memory map
-    print_string(u"Retrieving memory map...\r\n");
-    // TODO: Call GetMemoryMap
-    
-    // Exit boot services
-    print_string(u"Exiting boot services...\r\n");
-    // TODO: Call ExitBootServices
+    // Exit boot services (point of no return)
+    print_string(u"Exiting UEFI boot services...\r\n");
+    // TODO: ExitBootServices
     
     // Jump to kernel
-    print_string(u"Starting kernel...\r\n");
+    // TODO: ((void(*)(BootInfo*))KERNEL_LOAD_ADDRESS)(&boot_info);
     
-    // TODO: Call kernel entry point with boot_info
-    // typedef void (*KernelEntry)(BootInfo*);
-    // KernelEntry kernel = (KernelEntry)KERNEL_LOAD_ADDRESS;
-    // kernel(&boot_info);
-    
-    // If we get here, something went wrong
+    // Should never get here
     return EFI_SUCCESS;
 }

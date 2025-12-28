@@ -6,10 +6,10 @@ MetalOS is a ground-up operating system designed specifically to run QT6 applica
 
 ## Design Principles
 
-1. **Minimal by Design**: Only implement what's necessary to run QT6 applications
+1. **Absolute Minimum**: If it's not needed for QT6 Hello World, it doesn't exist
 2. **UEFI Native**: Boot directly via UEFI, no legacy BIOS support
-3. **Hardware Specific**: Optimized for AMD64 + Radeon RX 6600
-4. **Modern Approach**: Learn from Linux but implement cleanly from scratch
+3. **Hardware Specific**: AMD64 + Radeon RX 6600 only - no abstractions for other hardware
+4. **Single Purpose**: One app, one GPU, one goal - nothing else matters
 
 ## System Architecture
 
@@ -54,13 +54,13 @@ MetalOS is a ground-up operating system designed specifically to run QT6 applica
   - Transfer control to kernel
 
 ### 2. Kernel Core
-- **Purpose**: Provide essential OS services
-- **Language**: C/C++ with assembly for low-level operations
+- **Purpose**: Absolute bare minimum OS services
+- **Language**: C with assembly for critical parts
 - **Subsystems**:
-  - Memory Management (physical/virtual)
-  - Process/Thread Scheduler
-  - Interrupt Handling
-  - System Call Interface
+  - Memory Management (just enough for app + QT6)
+  - Single process support (no scheduler needed!)
+  - Interrupt handling (only what GPU/input needs)
+  - Direct syscall to kernel functions (no table/dispatch overhead)
 
 ### 3. Hardware Abstraction Layer (HAL)
 - **Purpose**: Abstract hardware specifics
@@ -78,28 +78,29 @@ MetalOS is a ground-up operating system designed specifically to run QT6 applica
   - QT6 framework (statically linked into application)
   - No shell, no command line - direct boot to app
 
-## Memory Layout
+## Memory Layout (Simplified)
 
 ```
 0x0000000000000000 - 0x0000000000000FFF : NULL guard page
-0x0000000000001000 - 0x00000000000FFFFF : Bootloader code/data
-0x0000000000100000 - 0x00000000FFFFFFFF : Kernel space
-0x0000000100000000 - 0x00007FFFFFFFFFFF : User space
-0xFFFF800000000000 - 0xFFFFFFFFFFFFFFFF : Kernel heap/stacks
+0x0000000000001000 - 0x00000000000FFFFF : Bootloader (temporary)
+0x0000000000100000 - 0x0000000000FFFFFF : Kernel (small!)
+0x0000000001000000 - 0x00000000FFFFFFFF : Application + QT6
+GPU VRAM: Separate, mapped via BAR
 ```
 
-## Boot Process
+No complex memory regions - keep it simple!
 
-1. **UEFI Firmware** loads bootloader from EFI System Partition
-2. **Bootloader** initializes basic hardware and sets up memory
-3. **Bootloader** locates and loads kernel binary
-4. **Bootloader** exits UEFI boot services
-5. **Kernel** initializes subsystems (memory, scheduler, interrupts)
-6. **Kernel** loads HAL drivers (GPU, PCI, input)
-7. **Kernel** directly launches QT6 Hello World application (no shell, no init)
-8. **Application** runs full-screen until exit/reboot
+## Boot Process (Minimal)
 
-**Note**: No command line, no shell - the system boots directly into the single application.
+1. **UEFI Firmware** loads bootloader
+2. **Bootloader** gets framebuffer, loads kernel, jumps
+3. **Kernel** maps memory, enables interrupts
+4. **Kernel** initializes GPU (minimal)
+5. **Kernel** sets up input (keyboard/mouse only)
+6. **Kernel** jumps directly to QT6 app
+7. **App** runs until halt
+
+**That's it. No filesystem, no daemons, no services, no nothing.**
 
 ## Development Phases
 

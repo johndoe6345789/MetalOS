@@ -2,9 +2,11 @@
 
 ## Vision
 
-MetalOS is a **minimal operating system** built from the ground up with a single purpose: run a QT6 Hello World application full-screen on AMD64 hardware with a Radeon RX 6600 GPU, booting via UEFI.
+MetalOS is **the absolute minimum operating system** needed to boot QT6 Hello World on AMD64 + RX 6600 via UEFI.
 
-This is not a general-purpose OS. Every component is purpose-built to achieve this specific goal with minimal complexity.
+**Target**: < 200 KB of OS code (excluding QT6)
+
+**Philosophy**: If it doesn't directly enable QT6 Hello World, it doesn't exist.
 
 ## Development Phases
 
@@ -28,145 +30,136 @@ This is not a general-purpose OS. Every component is purpose-built to achieve th
 
 ### Phase 2: UEFI Bootloader (Next)
 
-**Goal**: Boot from UEFI and load kernel
+**Goal**: Load kernel and jump (< 10 KB code)
 
 **Tasks**:
-1. Implement UEFI protocol interfaces
-   - Console I/O for early debugging
-   - Graphics Output Protocol
-   - Simple File System Protocol
-   - Memory allocation
+1. Console output for debugging (UEFI OutputString)
+2. Get framebuffer info from GOP (Graphics Output Protocol)
+3. Load kernel blob from known location
+4. Get minimal memory map
+5. Exit boot services
+6. Jump to kernel
 
-2. Graphics initialization
-   - Query available video modes
-   - Set optimal resolution (1920x1080 or best available)
-   - Set up framebuffer
+**Simplifications**:
+- Don't enumerate all video modes, take default
+- Don't parse filesystem, load from fixed location
+- Skip ACPI (try without it first)
+- No error recovery, just halt on failure
 
-3. Kernel loading
-   - Read metalos.bin from disk
-   - Load into memory at 1MB mark
-   - Verify kernel integrity
-
-4. System information gathering
-   - Get memory map
-   - Find ACPI tables (RSDP)
-   - Detect CPU features
-
-5. Exit boot services and jump to kernel
-   - Call ExitBootServices()
-   - Pass BootInfo structure to kernel
-   - Jump to kernel_main()
-
-**Success Criteria**: Bootloader loads kernel and jumps to kernel code
+**Success Criteria**: Bootloader prints messages and jumps to kernel
 
 ### Phase 3: Minimal Kernel
 
-**Goal**: Initialize hardware and provide basic services
+**Goal**: Initialize hardware (< 100 KB code)
 
 **Tasks**:
-1. Early kernel initialization
-   - Set up GDT (Global Descriptor Table)
-   - Set up IDT (Interrupt Descriptor Table)
-   - Enable interrupts
-   - Initialize framebuffer console
+1. Minimal paging setup
+   - Identity map or simple offset
+   - Just enough to keep CPU happy
+   - No fancy page fault handling
 
-2. Memory management
-   - Physical memory allocator (buddy system or bitmap)
-   - Virtual memory setup (page tables)
-   - Kernel heap allocator
-   - *Minimal implementation - just enough for QT6*
+2. Interrupt handling
+   - IDT with ~5 handlers max
+   - Timer, keyboard, mouse, GPU (if needed)
+   - No complex IRQ routing
 
-3. Process/Thread support
-   - Simple round-robin scheduler
-   - Context switching (bare minimum)
-   - Single user process support
-   - *No multi-user, no fancy scheduling*
+3. Memory allocator
+   - Bump allocator or simple free list
+   - No fancy algorithms
+   - Just malloc/free for QT6
 
-4. Basic I/O
-   - Serial port for debugging
-   - Framebuffer console
-   - *No disk I/O needed initially*
+4. NO scheduler - one process, always running
+5. NO process management - app is statically linked with kernel or simple jump
 
-**Success Criteria**: Kernel boots, prints messages, can allocate memory
+**Simplifications**:
+- Skip GDT setup if not needed (UEFI might have set it up)
+- Identity mapping instead of complex virtual memory
+- Bump allocator instead of buddy/slab
+- No TLB shootdown, no page fault handling
 
-### Phase 4: Hardware Abstraction Layer
+**Success Criteria**: Kernel boots, prints messages, mallocs work
 
-**Goal**: Support minimal hardware needed for QT6
+### Phase 4: Hardware Support
 
-**Tasks**:
-1. PCI Bus enumeration
-   - Scan PCI devices
-   - Find Radeon RX 6600 GPU
-   - Basic configuration
-
-2. GPU Driver (Radeon RX 6600)
-   - Initialize GPU
-   - Set up display pipeline
-   - Configure framebuffer
-   - *Minimal - no 3D acceleration initially*
-   - *Can use reference from Linux amdgpu driver*
-
-3. Input devices
-   - USB HID keyboard support
-   - USB HID mouse support
-   - PS/2 fallback (if needed)
-   - *Just enough for QT event handling*
-
-4. Timer
-   - APIC timer or PIT
-   - For scheduling and timeouts
-
-**Success Criteria**: Can detect and initialize GPU, receive keyboard/mouse input
-
-### Phase 5: System Call Interface
-
-**Goal**: Provide user-kernel boundary
+**Goal**: GPU + Input (< 70 KB code)
 
 **Tasks**:
-1. System call mechanism
-   - syscall/sysret instructions
-   - System call table
-   - Parameter passing
+1. PCI scan (minimal)
+   - Hardcode scan for vendor 0x1002 (AMD)
+   - Find RX 6600 device ID
+   - Enable memory access
+   - That's it!
 
-2. Essential system calls
-   - exit() - terminate process
-   - write() - output to console/log
-   - mmap() - memory allocation
-   - open/read/close() - minimal file operations (if needed)
-   - ioctl() - device control (for GPU)
-   - poll/select() - event handling (for input)
+2. GPU Driver (hardest part, < 50 KB)
+   - Map MMIO registers
+   - Initialize display controller (DCN)
+   - Hardcode 1920x1080 mode
+   - Set up framebuffer in VRAM
+   - Enable display output
+   - *Study Linux amdgpu driver, but keep it simple*
 
-3. User-kernel transitions
-   - Ring 3 to Ring 0 transitions
-   - Parameter validation
-   - Error handling
+3. Input devices (< 20 KB)
+   - **Try PS/2 first** (much simpler than USB!)
+   - If no PS/2: minimal USB XHCI for HID
+   - Keyboard: scancode → QT key events
+   - Mouse: packets → QT mouse events
 
-**Success Criteria**: User space can make system calls
+**Simplifications**:
+- No PCI tree traversal, just scan for our GPU
+- No GPU 3D, just 2D framebuffer
+- No hot-plug, no multiple displays
+- PS/2 over USB if possible (way simpler)
+- No timer sophistication, PIT is fine
 
-### Phase 6: User Space Runtime
+**Success Criteria**: Display working, keyboard/mouse input working
 
-**Goal**: Support C++ applications
+### Phase 5: Minimal Syscalls
+
+**Goal**: User-kernel boundary (< 10 KB code)
 
 **Tasks**:
-1. ELF loader
-   - Parse ELF headers
-   - Load program segments
-   - Set up entry point
-   - *Static linking initially - no dynamic loader*
+1. Syscall mechanism (syscall/sysret or just direct calls)
+2. Maybe 5-10 syscalls total:
+   - write() - debugging
+   - mmap() / munmap() - memory
+   - ioctl() - device control
+   - poll() - wait for input events
+   - exit() - halt system
 
-2. Minimal C/C++ runtime
-   - _start() function
-   - C++ global constructors/destructors
-   - Memory allocation (malloc/free)
-   - Basic string functions
-   - *Only what QT6 needs*
+**Simplifications**:
+- No syscall table if app can directly call kernel functions
+- No parameter validation (trust everything)
+- No error handling (just panic)
 
-3. Application launcher (no init/shell needed)
-   - Directly load QT6 hello world application
-   - No command line, no shell
-   - Single application until reboot
+**Success Criteria**: App can call kernel functions
 
-**Success Criteria**: Can load and run the QT6 hello world application directly
+### Phase 6: User Space & Application
+
+**Goal**: Load and run app
+
+**Tasks**:
+1. Simple app loading
+   - Static-linked binary
+   - No ELF parsing if we can avoid it
+   - Just jump to known entry point
+
+2. C++ minimal runtime
+   - Global constructors
+   - Basic new/delete (use kernel malloc)
+   - No exceptions (disable them)
+
+3. Direct boot to app
+   - No init, no shell
+   - Kernel calls app's main() directly
+   - App exits → kernel halts
+
+**Simplifications**:
+- Static link everything into one blob
+- Skip ELF loader completely if possible
+- No exceptions (compile with -fno-exceptions)
+- App runs in ring 0 or simple ring 3
+
+**Success Criteria**: Can run simple C++ program
 
 ### Phase 7: QT6 Port
 
