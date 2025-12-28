@@ -1,11 +1,24 @@
-# Prerequisites
-*.d
+# MetalOS .gitignore
 
-# Compiled Object files
+# Build artifacts
+*.o
+*.d
+*.a
+*.so
+*.bin
+*.efi
+*.elf
+*.img
+*.iso
 *.slo
 *.lo
-*.o
 *.obj
+*.dwo
+
+# Build directories
+build/
+bootloader/build/
+kernel/build/
 
 # Precompiled Headers
 *.gch
@@ -18,18 +31,16 @@
 *.pdb
 
 # Compiled Dynamic libraries
-*.so
 *.dylib
 *.dll
 
-# Fortran module files
+# Fortran module files (if ever used)
 *.mod
 *.smod
 
 # Compiled Static libraries
 *.lai
 *.la
-*.a
 *.lib
 
 # Executables
@@ -37,5 +48,35 @@
 *.out
 *.app
 
-# debug information files
-*.dwo
+# Editor files
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+*.sublime-*
+
+# OS specific
+.DS_Store
+Thumbs.db
+
+# Debug and log files
+*.log
+qemu.log
+
+# Temporary files
+tmp/
+*.tmp
+
+# Qt specific
+*.pro.user
+*.pro.user.*
+moc_*.cpp
+moc_*.h
+qrc_*.cpp
+ui_*.h
+.qmake.stash
+
+# Don't ignore example files
+!docs/examples/*.bin
+
