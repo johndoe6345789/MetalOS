@@ -20,8 +20,9 @@ cd /tmp/mesa
 # Checkout stable version
 git checkout mesa-24.0.0
 
-# Copy RADV sources
-cp -r src/amd/vulkan/* /path/to/MetalOS/deps/mesa-radv/
+# Copy RADV driver sources to deps
+# Assuming you're in the mesa source directory and MetalOS repo is in parent
+cp -r src/amd/vulkan/* ../MetalOS/deps/mesa-radv/
 ```
 
 ## Integration with MetalOS
