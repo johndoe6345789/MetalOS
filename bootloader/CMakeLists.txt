@@ -30,12 +30,21 @@ set(UEFI_CFLAGS
 )
 
 # Linker flags for UEFI
-set(UEFI_LDFLAGS
-    -shared
-    -Bsymbolic
-    -nostdlib
-    -znocombreloc
-)
+if(CMAKE_C_COMPILER_ID MATCHES "Clang")
+    set(UEFI_LDFLAGS
+        -shared
+        -Bsymbolic
+        -nostdlib
+        -Wl,-z,nocombreloc
+    )
+else()
+    set(UEFI_LDFLAGS
+        -shared
+        -Bsymbolic
+        -nostdlib
+        -znocombreloc
+    )
+endif()
 
 # Create object library
 add_library(bootloader_obj OBJECT ${BOOTLOADER_SOURCES})

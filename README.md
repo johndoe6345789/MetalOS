@@ -87,6 +87,24 @@ ninja
 ninja qemu
 ```
 
+### Building with Clang
+
+MetalOS supports both GCC and Clang compilers. To build with Clang:
+
+```bash
+mkdir build && cd build
+CC=clang CXX=clang++ cmake ..
+cmake --build .
+```
+
+Or with Ninja:
+
+```bash
+mkdir build && cd build
+CC=clang CXX=clang++ cmake -G Ninja ..
+ninja
+```
+
 ### Conan (With Package Management)
 
 ```bash

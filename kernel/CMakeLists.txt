@@ -55,6 +55,16 @@ set(KERNEL_CXXFLAGS
     -O2
 )
 
+# Add Clang-specific flags
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    list(APPEND KERNEL_CXXFLAGS
+        -target x86_64-unknown-none-elf
+        -fno-builtin
+        -fno-pie
+    )
+    message(STATUS "Added Clang-specific flags for kernel")
+endif()
+
 # Create object library
 add_library(kernel_obj OBJECT ${KERNEL_SOURCES})
 target_include_directories(kernel_obj PRIVATE include)
@@ -67,11 +77,22 @@ set_target_properties(kernel_elf PROPERTIES
     LINKER_LANGUAGE CXX
     POSITION_INDEPENDENT_CODE OFF
 )
-target_link_options(kernel_elf PRIVATE
-    -nostdlib
-    -no-pie
-    -T ${CMAKE_CURRENT_SOURCE_DIR}/linker.ld
-)
+
+# Set linker options based on compiler
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    target_link_options(kernel_elf PRIVATE
+        -nostdlib
+        -Wl,--no-pie
+        -T ${CMAKE_CURRENT_SOURCE_DIR}/linker.ld
+        -target x86_64-unknown-none-elf
+    )
+else()
+    target_link_options(kernel_elf PRIVATE
+        -nostdlib
+        -no-pie
+        -T ${CMAKE_CURRENT_SOURCE_DIR}/linker.ld
+    )
+endif()
 
 # Custom command to create flat binary
 add_custom_command(
