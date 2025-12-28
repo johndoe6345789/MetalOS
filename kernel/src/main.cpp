@@ -4,6 +4,8 @@
  * EXTREME MINIMAL kernel - only what's needed for QT6 Hello World.
  * Now with basic multicore support for better performance!
  * Just: boot -> init hardware (all cores) -> run app.
+ * 
+ * C++ implementation: Root level function hands off to classes
  */
 
 #include "kernel/kernel.h"
@@ -18,21 +20,21 @@
  * Kernel main entry point
  * Called by bootloader with boot information
  * 
- * Initializes all hardware including multicore support.
- * Simple design: all cores initialized but only BSP runs app.
- * Future: could distribute work across cores for better performance.
+ * This is the root-level function that hands off to C++ classes
+ * for hardware initialization and system management.
  */
-void kernel_main(BootInfo* boot_info) {
-    // Initialize GDT (Global Descriptor Table)
+extern "C" void kernel_main(BootInfo* boot_info) {
+    // Initialize GDT (Global Descriptor Table) - using GDT class
     gdt_init();
     
-    // Initialize IDT (Interrupt Descriptor Table)
+    // Initialize IDT (Interrupt Descriptor Table) - using InterruptManager class
     idt_init();
     
-    // Initialize physical memory manager
+    // Initialize physical memory manager - using PhysicalMemoryManager class
     pmm_init(boot_info);
     
     // Initialize kernel heap (allocate 256 pages = 1MB for kernel heap)
+    // Using HeapAllocator class
     void* heap_start_page = pmm_alloc_page();
     if (heap_start_page) {
         // Allocate additional pages for heap (256 pages total)
@@ -42,13 +44,13 @@ void kernel_main(BootInfo* boot_info) {
         heap_init(heap_start_page, 256 * PAGE_SIZE);  // 1MB heap
     }
     
-    // Initialize timer (1000 Hz = 1ms per tick)
+    // Initialize timer (1000 Hz = 1ms per tick) - using Timer class
     timer_init(TIMER_FREQUENCY);
     
-    // Initialize PCI bus
+    // Initialize PCI bus - using PCIManager class
     pci_init();
     
-    // Initialize SMP (Symmetric Multi-Processing)
+    // Initialize SMP (Symmetric Multi-Processing) - using SMPManager class
     // This will detect and start all available CPU cores
     smp_init();
     
@@ -87,4 +89,10 @@ void kernel_main(BootInfo* boot_info) {
  * All cores available for future parallel processing.
  * 
  * Total kernel size target: < 150 KB (with multicore support)
+ * 
+ * C++ Design:
+ * - Root-level kernel_main() function serves as entry point
+ * - All subsystems implemented as classes (GDT, InterruptManager, Timer, etc.)
+ * - Classes encapsulate state and behavior
+ * - C-compatible wrappers maintain compatibility with assembly and bootloader
  */

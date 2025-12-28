@@ -13,8 +13,9 @@ WORKDIR /metalos
 RUN apt-get update && apt-get install -y \
     # Build essentials
     build-essential \
-    gcc \
-    g++ \
+    clang \
+    clang++ \
+    lld \
     nasm \
     make \
     cmake \
@@ -62,6 +63,8 @@ RUN cp /usr/share/OVMF/OVMF_CODE.fd /metalos/deps/ovmf/ 2>/dev/null || \
 # Set environment variables
 ENV PATH="/metalos/tools:${PATH}"
 ENV METALOS_ROOT="/metalos"
+ENV CC=clang
+ENV CXX=clang++
 
 # Default command
 CMD ["/bin/bash"]

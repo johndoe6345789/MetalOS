@@ -18,6 +18,17 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Export compile commands for IDE support
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+# Compiler detection and configuration
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    message(STATUS "Using Clang compiler")
+    set(USING_CLANG TRUE)
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    message(STATUS "Using GCC compiler")
+    set(USING_GCC TRUE)
+else()
+    message(WARNING "Unsupported compiler: ${CMAKE_CXX_COMPILER_ID}")
+endif()
+
 # Default to Release build if not specified
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)

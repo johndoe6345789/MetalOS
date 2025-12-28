@@ -27,7 +27,15 @@ typedef struct {
     void* rsdp;
 } BootInfo;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // Kernel entry point
 void kernel_main(BootInfo* boot_info);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // METALOS_KERNEL_KERNEL_H
