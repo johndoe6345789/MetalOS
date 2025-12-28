@@ -17,7 +17,7 @@ OVMF is part of the [EDK II project](https://github.com/tianocore/edk2).
 
 ## Obtaining OVMF
 
-### Option 1: Use Pre-built Binaries
+### Option 1: Use System-Installed OVMF (Recommended)
 
 Many distributions provide OVMF packages:
 ```bash
@@ -31,19 +31,20 @@ cp /usr/share/OVMF/OVMF_VARS.fd deps/ovmf/
 
 ### Option 2: Download Pre-built Binaries
 
-Pre-built OVMF binaries are available from various sources. One option is Gerd Hoffmann's builds:
+Pre-built OVMF binaries are available from various sources:
 
 ```bash
-# Check https://www.kraxel.org/repos/jenkins/edk2/ for available builds
-# Example with a specific build (check for newer versions):
-wget https://www.kraxel.org/repos/jenkins/edk2/edk2.git-ovmf-x64-0-20230524.209.gf0064ac3af.EOL.no.nore.updates.noarch.rpm
+# Visit https://www.kraxel.org/repos/jenkins/edk2/ for current builds
+# Or use direct links from distributions' mirror sites
+# Example (adjust URL to current available version):
+wget https://www.kraxel.org/repos/jenkins/edk2/edk2.git-ovmf-x64-<VERSION>.rpm
 
 rpm2cpio edk2.git-ovmf-*.rpm | cpio -idmv
 cp usr/share/edk2/ovmf/OVMF_CODE.fd deps/ovmf/
 cp usr/share/edk2/ovmf/OVMF_VARS.fd deps/ovmf/
 ```
 
-**Note**: The specific build URL may change. Visit https://www.kraxel.org/repos/jenkins/edk2/ for current builds or use system packages (Option 1) instead.
+**Note**: Pre-built binaries may become unavailable. System packages (Option 1) or building from source (Option 3) are more reliable long-term.
 
 ### Option 3: Build from Source
 
