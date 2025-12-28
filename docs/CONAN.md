@@ -34,21 +34,26 @@ conan remote add kernelcenter https://johndoe6345789.github.io/kernelcenter/
 
 # List your configured remotes to verify
 conan remote list
-
-# Set KernelCenter as the primary remote (optional)
-conan remote enable kernelcenter
 ```
 
 ### Using Packages from KernelCenter
 
-Once the remote is added, you can install packages from it:
+Once the remote is added, you can use packages from it by adding them to your `conanfile.py` or `conanfile.txt`:
 
+**In conanfile.py:**
+```python
+requires = (
+    "mesa-radv/24.0.0",  # Will be fetched from KernelCenter
+)
+```
+
+**Or search for available packages:**
 ```bash
 # Search for available packages
 conan search "*" -r=kernelcenter
 
-# Install specific packages (Conan 2.x syntax)
-conan install --requires=<package>/<version> -r=kernelcenter
+# Example: Search for specific package
+conan search "mesa-radv/*" -r=kernelcenter
 ```
 
 ### Repository Information
@@ -56,9 +61,10 @@ conan install --requires=<package>/<version> -r=kernelcenter
 You can view detailed information about the KernelCenter repository:
 
 ```bash
-# Fetch repository information
+# Fetch repository information using curl
 curl https://johndoe6345789.github.io/kernelcenter/
-# or
+
+# Alternative: Using wget
 wget -q -O - https://johndoe6345789.github.io/kernelcenter/
 ```
 
