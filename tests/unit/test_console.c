@@ -6,6 +6,7 @@
 #include "test_framework.h"
 #include <stdint.h>
 #include <string.h>
+#include <stdlib.h>
 
 // Mock console structure (matching kernel/console.h)
 typedef struct {
@@ -18,9 +19,6 @@ typedef struct {
     uint32_t fg_color;
     uint32_t bg_color;
 } Console;
-
-// Mock framebuffer for testing (using smaller size to avoid stack issues)
-static uint32_t test_framebuffer[800 * 600];
 
 // Simplified console functions for unit testing
 // In real implementation, these would be in a testable module
@@ -57,6 +55,9 @@ void mock_console_clear(void) {
 
 // Test: Console initialization
 TEST(console_init) {
+    uint32_t* test_framebuffer = malloc(1920 * 1080 * sizeof(uint32_t));
+    ASSERT_NOT_NULL(test_framebuffer);
+    
     mock_console_init(test_framebuffer, 1920, 1080, 1920 * 4);
     
     ASSERT_NOT_NULL(test_console.framebuffer);
@@ -68,11 +69,15 @@ TEST(console_init) {
     ASSERT_EQ(test_console.fg_color, 0xFFFFFFFF);
     ASSERT_EQ(test_console.bg_color, 0x00000000);
     
+    free(test_framebuffer);
     TEST_PASS();
 }
 
 // Test: Console color setting
 TEST(console_set_color) {
+    uint32_t* test_framebuffer = malloc(1920 * 1080 * sizeof(uint32_t));
+    ASSERT_NOT_NULL(test_framebuffer);
+    
     mock_console_init(test_framebuffer, 1920, 1080, 1920 * 4);
     
     mock_console_set_color(0xFF0000FF, 0x00FF00FF);
@@ -80,11 +85,15 @@ TEST(console_set_color) {
     ASSERT_EQ(test_console.fg_color, 0xFF0000FF);
     ASSERT_EQ(test_console.bg_color, 0x00FF00FF);
     
+    free(test_framebuffer);
     TEST_PASS();
 }
 
 // Test: Console clear operation
 TEST(console_clear) {
+    uint32_t* test_framebuffer = malloc(800 * 600 * sizeof(uint32_t));
+    ASSERT_NOT_NULL(test_framebuffer);
+    
     mock_console_init(test_framebuffer, 800, 600, 800 * 4);
     mock_console_set_color(0xFFFFFFFF, 0x00112233);
     
@@ -103,6 +112,7 @@ TEST(console_clear) {
     ASSERT_EQ(test_framebuffer[1], 0x00112233);
     ASSERT_EQ(test_framebuffer[10], 0x00112233);
     
+    free(test_framebuffer);
     TEST_PASS();
 }
 
@@ -120,11 +130,15 @@ TEST(console_null_framebuffer) {
 
 // Test: Console with small dimensions
 TEST(console_small_dimensions) {
+    uint32_t* test_framebuffer = malloc(64 * 48 * sizeof(uint32_t));
+    ASSERT_NOT_NULL(test_framebuffer);
+    
     mock_console_init(test_framebuffer, 64, 48, 64 * 4);
     
     ASSERT_EQ(test_console.width, 64);
     ASSERT_EQ(test_console.height, 48);
     
+    free(test_framebuffer);
     TEST_PASS();
 }
 
