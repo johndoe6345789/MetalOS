@@ -194,12 +194,18 @@ conan build . --build-folder=build
 - ✅ Version management
 - ✅ Cross-platform package management
 - ✅ Integration with CMake and other build systems
+- ✅ **Recommended for CI/CD** - ensures consistent builds
 
 #### Disadvantages
 - ❌ Requires Python and Conan
-- ❌ Additional complexity
-- ❌ Currently overkill (we have no dependencies yet)
+- ❌ Additional setup step
 - ❌ Learning curve
+
+#### When to Use
+- ✅ **CI/CD pipelines** (all workflows now use Conan)
+- ✅ **Production builds** requiring reproducibility
+- ✅ **When adding external dependencies** (QT6, Mesa RADV in the future)
+- ✅ **Cross-platform development** needing consistent dependencies
 
 ---
 
@@ -221,26 +227,31 @@ cd build-ninja && ninja && ninja qemu
 - Configure your IDE to use the CMakeLists.txt
 
 ### For CI/CD
-**Use: Make or CMake**
+**Use: Conan + CMake (Recommended)**
 ```bash
 # GitHub Actions, GitLab CI, etc.
-make all && make test
-
-# Or with CMake
-cmake -B build -G Ninja
+# All MetalOS CI workflows now use Conan
+conan install . --build=missing
+cmake -B build -DCMAKE_TOOLCHAIN_FILE=build/Release/generators/conan_toolchain.cmake
 cmake --build build
 ctest --test-dir build
 ```
 
+Benefits:
+- ✅ Reproducible builds across different CI runners
+- ✅ Consistent dependency versions
+- ✅ Future-proof for when we add dependencies
+
 ### For Cross-Platform Development
-**Use: CMake + Ninja**
+**Use: Conan + CMake + Ninja**
 ```bash
 # Works on Linux, macOS, Windows
-cmake -G Ninja -B build
+conan install . --build=missing
+cmake -G Ninja -B build -DCMAKE_TOOLCHAIN_FILE=build/Release/generators/conan_toolchain.cmake
 cmake --build build
 ```
 
-### For Projects with Dependencies (Future)
+### For Projects with Dependencies (Current & Future)
 **Use: Conan + CMake**
 ```bash
 # When we add QT6, Mesa RADV, etc.

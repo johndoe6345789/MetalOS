@@ -320,7 +320,57 @@ mkdir build && cd build
 cmake ..
 ```
 
+## Testing Conan Integration
+
+To verify that Conan is properly integrated and working:
+
+```bash
+# Run the Conan integration test
+./scripts/test-conan-build.sh
+```
+
+This test script will:
+1. Verify Conan installation
+2. Check/create Conan profile
+3. Install dependencies
+4. Generate Conan toolchain
+5. Configure CMake with Conan
+6. Validate the integration
+
 ## Troubleshooting
+
+### Conan Not Found
+If you get "conan: command not found":
+```bash
+# Install Conan
+pip3 install conan
+
+# Verify installation
+conan --version
+
+# Create profile
+conan profile detect --force
+```
+
+### Conan Profile Issues
+If Conan complains about missing profile:
+```bash
+# Detect and create default profile
+conan profile detect --force
+
+# Verify profile exists
+conan profile show default
+```
+
+### Conan Toolchain Not Found
+If CMake can't find the Conan toolchain:
+```bash
+# Make sure to run conan install first
+conan install . --build=missing
+
+# The toolchain will be at: build/Release/generators/conan_toolchain.cmake
+# Use it with: cmake .. -DCMAKE_TOOLCHAIN_FILE=../build/Release/generators/conan_toolchain.cmake
+```
 
 ### Cross-Compiler Not Found
 If you get errors about missing cross-compiler:
