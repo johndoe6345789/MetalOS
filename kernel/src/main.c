@@ -7,6 +7,8 @@
  */
 
 #include "kernel/kernel.h"
+#include "kernel/gdt.h"
+#include "kernel/interrupts.h"
 
 /*
  * Kernel main entry point
@@ -19,13 +21,13 @@ void kernel_main(BootInfo* boot_info) {
     // Suppress unused parameter warning
     (void)boot_info;
     
-    // TODO: Set up minimal page tables (identity mapped or simple offset)
+    // Initialize GDT (Global Descriptor Table)
+    gdt_init();
     
-    // TODO: Set up IDT with only interrupts we need:
-    //       - Keyboard/mouse (USB or PS/2)
-    //       - Timer (for QT event loop)
-    //       - GPU (if needed)
-    //       That's it! Maybe 5 interrupt handlers total.
+    // Initialize IDT (Interrupt Descriptor Table)
+    idt_init();
+    
+    // TODO: Set up minimal page tables (identity mapped or simple offset)
     
     // TODO: Simple memory allocator (bump allocator is fine)
     

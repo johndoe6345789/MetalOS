@@ -20,6 +20,26 @@ build/
 bootloader/build/
 kernel/build/
 
+# CMake
+CMakeCache.txt
+CMakeFiles/
+cmake-build-*/
+cmake_install.cmake
+install_manifest.txt
+compile_commands.json
+CTestTestfile.cmake
+_deps/
+
+# Ninja
+.ninja_deps
+.ninja_log
+
+# Conan
+conan.lock
+conaninfo.txt
+conanbuildinfo.*
+graph_info.json
+
 # Test binaries
 tests/unit/test_*
 !tests/unit/*.c
