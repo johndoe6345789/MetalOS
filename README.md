@@ -55,13 +55,13 @@ See [docs/MINIMALISM.md](docs/MINIMALISM.md) for full philosophy.
 ## Development Phases
 
 **Phase 1: Project Foundation** ✅ COMPLETE  
-**Phase 2: UEFI Bootloader** (Next)  
-**Phase 3: Core Kernel Components**  
+**Phase 2: UEFI Bootloader** ✅ COMPLETE  
+**Phase 3: Minimal Kernel (In Progress)** ⏳ In Progress  
 **Phase 4: Hardware Support**  
-**Phase 5: System Call Interface**  
+**Phase 5: Minimal Syscalls**  
 **Phase 6: User Space & Application**  
 **Phase 7: QT6 Port**  
-**Phase 8: Integration & Testing**
+**Phase 8: Integration & Polish**
 
 See [docs/ROADMAP.md](docs/ROADMAP.md) for detailed phase breakdown.
 

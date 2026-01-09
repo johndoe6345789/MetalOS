@@ -80,6 +80,7 @@ MetalOS is **the absolute minimum operating system** needed to boot QT6 Hello Wo
    - [x] PCI scanning
    - [x] SMP/multicore support framework
    - [x] Spinlocks for synchronization
+- [ ] Implement bump allocator for user applications
 
 **Progress**:
 - ✅ Core kernel structure in place
