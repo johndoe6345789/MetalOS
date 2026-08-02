@@ -40,8 +40,8 @@ class MetalOSConan(ConanFile):
     # No external dependencies yet (freestanding OS)
     # Future dependencies will be added here:
     # requires = (
-    #     "qt/6.5.0@qt/stable",  # When we port QT6
-    #     "mesa/22.3.0@system/stable",  # When we integrate Mesa RADV
+    #     "qt/6.5.3",  # When we port QT6 (from KernelCenter)
+    #     "mesa-radv/24.0.0",  # When we integrate Mesa RADV (from KernelCenter)
     # )
     
     def layout(self):

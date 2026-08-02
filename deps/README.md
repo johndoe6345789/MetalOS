@@ -2,6 +2,15 @@
 
 This directory contains third-party dependencies managed in-house for MetalOS development.
 
+## Dependency Management Options
+
+MetalOS provides two approaches for dependency management:
+
+1. **In-house dependencies** (this directory) - Manual download and setup of dependencies
+2. **Conan package manager** - Automated dependency management via [KernelCenter](https://johndoe6345789.github.io/kernelcenter/)
+
+For Conan-based dependency management, see [docs/CONAN.md](../docs/CONAN.md).
+
 ## Directory Structure
 
 ```

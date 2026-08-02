@@ -122,7 +122,37 @@ brew install nasm qemu x86_64-elf-gcc x86_64-elf-binutils cmake python3
 # Install Conan (optional but recommended)
 pip3 install conan
 conan profile detect --force
+
+# Add MetalOS custom Conan repository (optional)
+conan remote add kernelcenter https://johndoe6345789.github.io/kernelcenter/
 ```
+
+### Custom Conan Repository (KernelCenter)
+
+MetalOS provides a **custom Conan repository** that hosts MetalOS-specific packages and optimized configurations for minimal OS development.
+
+**Repository URL**: https://johndoe6345789.github.io/kernelcenter/
+
+To use the custom repository:
+
+```bash
+# Add the KernelCenter remote
+conan remote add kernelcenter https://johndoe6345789.github.io/kernelcenter/
+
+# Verify it was added
+conan remote list
+
+# View repository information
+curl https://johndoe6345789.github.io/kernelcenter/
+```
+
+The KernelCenter repository provides:
+- Pre-built MetalOS components
+- Custom package recipes for freestanding environments
+- GPU firmware packages
+- Future Mesa RADV and QT6 minimal builds
+
+For detailed Conan configuration and usage, see [docs/CONAN.md](CONAN.md).
 
 ## Building the Bootloader
 
